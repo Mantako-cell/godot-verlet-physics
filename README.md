@@ -1,129 +1,196 @@
-# VerletDynamics3D for Godot 4.7+
+# Verlet Dynamics for Godot 4.7+ (2D & 3D Suite)
 
-A high-performance, pure GDScript 3D Verlet physics engine and node toolkit optimized for **Godot 4.7+** (and compatible with 4.x). Designed for instant drop-in integration without any C++ compilation, external native dependencies, or .NET setup.
+A high-performance, pure GDScript 2D & 3D Verlet physics engine and node toolkit designed specifically for **Godot 4.7+** (and compatible with Godot 4.x). Instant drop-in integration without any C++ compilation, GDExtension binaries, external native dependencies, or .NET setup.
 
 ---
 
-## ✨ Features
+## 🌟 Overview: Ready for Both 2D and 3D
+
+Whether you are making a 2D platformer with rope swinging, suspension bridges, and squishy slime monsters, or a 3D action game with grapple hooks, tearable banners, and swinging wrecking balls, Verlet Dynamics provides first-class nodes with native Godot Editor integration, procedural rendering, and bidirectional physics coupling.
+
+---
+
+## ✨ 2D Feature Suite
+
+### 🪢 1. `VerletRope2D`
+- **Dynamic Anchoring**: Pin start, end, or intermediate points to static coordinates or moving `Node2D`/`RigidBody2D` nodes with custom local offsets.
+- **Two-Way RigidBody2D Coupling**: Ropes transfer real physical tension directly to attached 2D physics bodies (e.g. wrecking balls, cranes, hanging lanterns, suspension bridges).
+- **Continuous 2D World Collisions**: Raycast-based obstacle detection using `PhysicsRayQueryParameters2D` with customizable friction and bounce.
+- **Procedural 2D Rendering Modes**:
+  - `SMOOTH_LINE`: Anti-aliased curved cord with configurable thickness and color.
+  - `CAPSULE_CHAIN`: Interlocking rounded pill links for heavy industrial chains.
+  - `SEGMENT_LINES`: Classic lightweight segmented cable.
+- **Interactive Winch API**: `winch(delta_length)` dynamically reels in or lets out rope for elevators, climbing hooks, and winches.
+- **Tension Stress Heatmap**: Real-time stress color gradient (`Green -> Yellow -> Red`) visually indicating structural load.
+- **Breakable Constraints**: Automatically snaps when tension exceeds `break_tension_threshold`, or cut dynamically via `cut_at(index)`.
+
+### 🚩 2. `VerletCloth2D`
+- **2D Banner & Curtain Grid**: Multi-point Verlet sheet for flags, tapestries, curtains, and banners.
+- **Structural + Shear Constraints**: Realistic cloth wrinkles and diagonal shear stability without shape collapse.
+- **Dynamic Wind Flutter**: Simulates natural 2D air currents with gust turbulence and harmonic ripples.
+- **Dynamic Quad Mesh Rendering**: Procedurally generates textured or colored 2D quad geometry.
+- **Real-Time Tearing**: Call `tear_at(x, y)` or slice across the banner with the mouse to rip cloth in real-time.
+
+### 🍮 3. `VerletSoftBody2D`
+- **Squishy Jelly / Slime Blobs**: Soft-body deformable polygon with perimeter ring particles and a central core.
+- **Volume Preservation Struts**: Radial spokes and internal cross-struts keep the blob from deflating while allowing organic squishing and stretching.
+- **Elastic Bouncing**: Reacts elastically when landing on 2D floors or being hit by physics objects.
+- **Procedural Gloss Rendering**: Smooth filled polygon body with customizable color, border outlines, and a stylized glossy specular highlight.
+- **Interactive Grabbing**: Click and drag any point on the slime to stretch it like elastic putty.
+
+### 💨 4. `VerletWindArea2D`
+- **Area2D Wind Physics**:
+  - `DIRECTIONAL`: Sustained directional airflow with configurable gust frequency.
+  - `RADIAL_OUTWARD`: Shockwave blast originating from an explosion center.
+- **Automatic Particle Discovery**: Directly affects all 2D ropes, banners, and soft bodies overlapping its collision shape.
+
+---
+
+## ✨ 3D Feature Suite
 
 ### 🪢 1. `VerletRope3D`
-- **Verlet Particle Integration**: Stable, fast relaxation solver with configurable iterations.
-- **Dynamic Anchoring**: Pin start, end, or intermediate particles to static points or moving `Node3D`/`RigidBody3D` nodes with custom local offsets.
-- **Two-Way RigidBody3D Coupling**: Ropes transfer real physical tension forces directly to attached `RigidBody3D` bodies (e.g. wrecking balls, swinging crates, pendulums).
-- **Continuous World Collisions**: Raycast-based obstacle detection against Godot 3D collision layers with surface friction and bounce.
-- **Procedural 3D Mesh Generation**:
-  - `TUBE_MESH`: Real-time cylindrical 3D mesh with smooth normals and texture coordinates using parallel transport frames to avoid curve twisting.
-  - `CHAIN_LINKS`: Real-time `MultiMeshInstance3D` rendering alternating interlocking chain links.
-  - `DEBUG_LINE`: Lightweight immediate line renderer.
-- **Breakable Constraints & Spark FX**: Automatically snaps when tension exceeds `break_tension_threshold` (spawning spark embers), or cut dynamically via `cut_at(index)`.
-- **Tension Stress Heatmap**: Toggleable real-time vertex color gradient (Green -> Yellow -> Blazing Red) showing stress distribution along the rope.
-- **Dynamic Winch API**: `winch(delta_length)` reels in or feeds out rope in real-time for elevators, cranes, and grappling hooks.
-- **Wind & Slack Control**: Dynamic wind turbulence and catenary curve sag.
+- **Parallel Transport Tube Mesh**: Real-time 3D cylinder mesh generation with smooth normals and texture coordinates without curve twisting.
+- **MultiMesh Chain Links**: Renders alternating 3D interlocking chain links with zero draw-call overhead.
+- **Continuous 3D Raycast Collisions**: Ropes wrap and slide naturally over 3D static geometry and obstacles.
+- **Two-Way RigidBody3D Coupling**: Transmits physical pulling forces to 3D dynamic bodies.
+- **Breakable & Spark FX**: Snaps under extreme tension and spawns particle spark embers.
 
 ### 🚩 2. `VerletCloth3D`
-- **2D Lattice in 3D Space**: Grid particle system supporting flags, banners, curtains, sails, and trampolines.
-- **Triple Constraint Architecture**:
-  - Structural constraints (horizontal/vertical links)
-  - Shear constraints (diagonal links preventing shear distortion)
-  - Bending/Flexion constraints (skip-one links to control wrinkling)
-- **Aerodynamic Wind Lift & Drag**: Simulates aerodynamic normal forces across triangular faces, producing lifelike billows and flutter waves.
-- **High-Restitution Trampolines**: Can act as a springy elastic trampoline, launching colliding physics bodies into the air.
-- **Procedural ArrayMesh**: Dynamic vertex positions and smooth-shaded normal recomputation for lighting and reflections.
-- **Collision Draping**: Renders cloth draped over tables, spheres, and characters.
-- **Tearable**: Supports cutting and ripping cloth in real-time (`tear_at(x, y)`).
+- **3D ArrayMesh Lattice**: Real-time normal recomputation for lighting and reflections on fluttering flags, sails, and trampolines.
+- **Aerodynamic Lift & Drag**: Realistic billows generated from face normals and dynamic wind vectors.
+- **High-Restitution Trampolines**: Launches incoming physics bodies into the air upon impact.
+- **Tearable Mesh**: Supports cutting and ripping cloth along any grid coordinate.
 
 ### 🍮 3. `VerletSoftVolume3D`
-- **Deformable 3D Lattice**: 3D cube / jelly volume with surface springs and internal 3D cross-diagonal struts for volume preservation.
-- **Elastic Bouncing**: Squishes and deforms upon landing on surfaces, recovering shape elastically.
+- **3D Deformable Cube/Lattice**: 3D soft-body volume with cross-diagonal struts and surface springs.
+- **Elastic Recovery**: Squishes against 3D ground geometry and bounces back to its rest shape.
 
 ### 💨 4. `VerletWindArea3D`
-- **Multi-Mode Wind Physics**:
-  - `DIRECTIONAL`: Uniform directional gale with turbulence noise.
-  - `RADIAL_OUTWARD`: Shockwave explosion breeze with distance falloff.
-  - `VORTEX_SWIRL`: Tornado whirlwind rotating ropes and cloth around an eye with updraft lift!
+- **Directional, Radial, and Vortex Tornado Swirl Modes**: Simulates atmospheric wind, shockwave blasts, and rotating tornadoes.
 
 ### 🔊 5. `VerletAudioSynth`
-- **Zero-Dependency Procedural Audio**: Generates real-time sound effects (snap cracks, metallic slices, impact thuds, grapple releases) in pure GDScript without needing external `.wav` files.
+- **Zero-Dependency Procedural Audio**: Real-time audio synthesizer generating sound effects (rope snaps, knife slices, impact thuds, grapple releases) in pure GDScript without external `.wav` files.
 
 ---
 
 ## 🚀 Quick Start / Installation
 
 ### Method 1: Drop into an Existing Project
-1. Copy the `addons/verlet_dynamics_3d/` folder into your Godot 4 project's `addons/` directory.
-2. In the Godot editor, open **Project -> Project Settings -> Plugins**.
-3. Enable **Verlet Dynamics 3D**.
-4. The custom nodes (`VerletRope3D`, `VerletCloth3D`, `VerletSoftVolume3D`, `VerletWindArea3D`) are now available directly in the **Create New Node** dialog with custom icons!
+1. Copy the `addons/verlet_dynamics_3d/` folder into your Godot project's `addons/` directory.
+2. In Godot, go to **Project -> Project Settings -> Plugins**.
+3. Enable **Verlet Dynamics (2D & 3D)**.
+4. All custom nodes are now available in the **Create New Node** dialog with custom icons:
+   - **2D Nodes**: `VerletRope2D`, `VerletCloth2D`, `VerletSoftBody2D`, `VerletWindArea2D`
+   - **3D Nodes**: `VerletRope3D`, `VerletCloth3D`, `VerletSoftVolume3D`, `VerletWindArea3D`
 
-### Method 2: Explore the Showcase Playground
-Open the provided project directory (`godot-verlet-physics`) in Godot 4 and press **F5** to run the interactive showcase scene (`res://demo/scenes/showcase_world.tscn`).
+### Method 2: Explore the Interactive Showcases
+Open the project directory in Godot 4 and run either showcase:
+- **2D Showcase**: `res://demo/scenes/showcase_world_2d.tscn` (Platformer suspension bridge, wrecking ball, jelly slime, fluttering banner, crate stack, particle grabber & cutter).
+- **3D Showcase**: `res://demo/scenes/showcase_world.tscn` (Full 3D park with grappling hook gun, crane, trampoline, tornado vortex, and wrecking ball).
+- Use the **HUD Buttons** (`[Switch to 2D Showcase]` / `[Switch to 3D Showcase]`) to seamlessly jump between them!
 
 ---
 
-## 🎮 Showcase Controls
+## 🎮 2D Showcase Controls
+
+| Input | Action |
+|---|---|
+| **Left Click + Drag** | **Grab and pull any 2D particle** (stretch ropes, pull cloth, squish slimes) |
+| **Right Click + Drag** | **Laser Slice / Cut tool** (slices ropes and tears cloth under the cursor) |
+| **Space or 'B'** | **Spawn 2D Wrecking Ball** (crashes into crate stacks and tests ropes) |
+| **'T'** | **Toggle Tension Stress Heatmap** (Green -> Yellow -> Red) |
+| **'W'** | **Cycle 2D Wind Mode** (Gale -> Hurricane -> Off) |
+| **'R'** | **Reset 2D Scene** |
+| **'3'** | **Switch to 3D Showcase** |
+
+---
+
+## 🎮 3D Showcase Controls
 
 | Input | Action |
 |---|---|
 | **Right Mouse Click + Drag** | Look / Fly Camera |
-| **W / A / S / D + Q / E** | Navigate Camera in 3D space |
-| **Shift** | Boost Camera Speed |
-| **Left Mouse Click + Drag** | **Grab and pull any rope or cloth particle in 3D** |
-| **'G' or Grapple Button** | **Shoot Physics Grappling Hook** to any surface! |
+| **W / A / S / D + Q / E** | Navigate Camera in 3D space (Shift for speed boost) |
+| **Left Mouse Click + Drag** | **Grab and pull any 3D particle in real space** |
+| **'G' or Grapple Button** | **Shoot Physics Grappling Hook** to any surface |
 | **Scroll Wheel Up / Down** | **Winch In / Out** (reels in rope, pulling you forward) |
 | **'C' or Middle Mouse** | **Laser Slice rope or tear cloth** with spark burst FX |
-| **'T' or Tension Button** | **Toggle Tension Stress Heatmap** (Green -> Yellow -> Red) |
-| **'W' or Wind Button** | **Cycle Wind Mode** (Gale -> Tornado Vortex -> Off) |
+| **'T'** | **Toggle Tension Stress Heatmap** |
+| **'W'** | **Cycle Wind Mode** (Gale -> Tornado Vortex -> Off) |
 | **Space or 'B'** | **Fire rolling physics balls** |
-| **'R'** | Reset scene and physics simulations |
+| **'2'** | **Switch to 2D Showcase** |
 
 ---
 
-## 💻 GDScript API Examples
+## 💻 2D GDScript API Examples
 
-### Creating a Hanging Rope in Code:
+### Creating an Interactive 2D Rope Attached to a RigidBody2D:
 ```gdscript
-var rope = VerletRope3D.new()
-rope.length = 5.0
-rope.segment_count = 20
+var rope = VerletRope2D.new()
+rope.length = 300.0            # 300 pixels long
+rope.segment_count = 15
+rope.thickness = 5.0
+rope.render_mode = VerletRope2D.RenderMode.SMOOTH_LINE
 rope.pin_start = true
-rope.attach_start_to = ^"../CeilingAnchor"
+rope.attach_start_to = ^"../AnchorStaticBody"
+
+# Attach end to a moving physics object (e.g., wrecking ball or crate)
 rope.pin_end = true
-rope.attach_end_to = ^"../HeavyCrateBody"
+rope.attach_end_to = ^"../CrateRigidBody"
 rope.apply_forces_to_rigidbodies = true
+
 add_child(rope)
 ```
 
-### Cutting a Rope Segment:
+### Winching a 2D Rope (Elevator / Grapple):
 ```gdscript
-# Snips constraint at segment index 5
-rope.cut_at(5)
+# Reel in 20 pixels
+rope.winch(-20.0)
+
+# Feed out 20 pixels
+rope.winch(20.0)
 ```
 
-### Applying an Impulse (e.g. Explosion):
+### Creating a Squishy 2D Slime / Jelly Blob:
 ```gdscript
-# Blow nearby rope particles away from an explosion epicenter
-rope.apply_radial_impulse(explosion_pos, 5.0, 30.0)
+var slime = VerletSoftBody2D.new()
+slime.radius = 45.0
+slime.point_count = 12
+slime.stiffness = 0.95
+slime.bounce = 0.7
+slime.body_color = Color(0.2, 0.85, 0.45, 0.9)
+add_child(slime)
 ```
 
-### Creating Fluttering Cloth:
+### Creating a Fluttering 2D Banner:
 ```gdscript
-var cloth = VerletCloth3D.new()
-cloth.resolution = Vector2i(16, 16)
-cloth.cloth_size = Vector2(3.0, 3.0)
-cloth.pin_preset = VerletCloth3D.PinPreset.TOP_EDGE
-cloth.wind_vector = Vector3(8.0, 1.0, 0.0)
-add_child(cloth)
+var banner = VerletCloth2D.new()
+banner.grid_size = Vector2i(10, 8)
+banner.spacing = Vector2(16.0, 16.0)
+banner.pin_top_edge = true
+banner.wind_force = Vector2(200.0, -30.0)
+add_child(banner)
 ```
 
-### Tearing Cloth at Coordinates:
+### Cutting Ropes or Tearing Cloth:
 ```gdscript
-cloth.tear_at(8, 8)
+# Cut rope at segment 4
+rope.cut_at(4)
+
+# Tear cloth banner at grid coordinate (5, 4)
+banner.tear_at(5, 4)
 ```
 
 ---
 
 ## ⚡ Performance & Optimization Tips
 
-- **Solver Iterations**: Defaults to 8–12 iterations. For background decorative cables, 4–6 iterations is plenty. For rigid chains under extreme tension, use 16–20 iterations.
-- **Collision Mask**: Set `collision_mask` to specific physics layers to prevent unnecessary raycasts against complex foliage or trigger areas.
-- **Segment Count**: For standard game cables, 10–16 segments provides smooth curves with virtually zero CPU overhead.
+- **Solver Iterations**: Defaults to 6–10 iterations. For background decorative cables, 4–6 iterations is plenty. For rigid chains under extreme tension, use 12–16 iterations.
+- **Collision Mask**: Set `collision_mask` to specific physics layers so ropes only cast rays against solid terrain rather than every trigger zone or particle effect.
+- **Segment Count**: For standard 2D cables and ropes, 10–16 segments provides butter-smooth curves with virtually zero CPU overhead.
+- **Pure GDScript**: No native bindings required; runs smoothly across Windows, Linux, macOS, Android, iOS, and Web (HTML5/WASM).
+
+---
+
+## 📄 License
+MIT License. Free for use in personal, educational, and commercial Godot projects.

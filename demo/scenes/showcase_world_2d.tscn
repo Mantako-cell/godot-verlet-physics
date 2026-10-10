@@ -1,0 +1,284 @@
+[gd_scene load_steps=12 format=3 uid="uid://d3yq8j7v6a12c"]
+
+[ext_resource type="Script" path="res://demo/scripts/showcase_world_2d.gd" id="1_world"]
+[ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_rope_2d.gd" id="2_rope"]
+[ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_cloth_2d.gd" id="3_cloth"]
+[ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_soft_body_2d.gd" id="4_soft"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(1200, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(40, 700)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ramp"]
+size = Vector2(220, 20)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_wreck"]
+radius = 32.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_crate"]
+size = Vector2(38, 38)
+
+[node name="ShowcaseWorld2D" type="Node2D"]
+script = ExtResource("1_world")
+
+[node name="Background" type="CanvasModulate" parent="."]
+color = Color(0.95, 0.96, 0.98, 1)
+
+[node name="Boundaries" type="StaticBody2D" parent="."]
+
+[node name="Floor" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(576, 630)
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="FloorVisual" type="ColorRect" parent="Boundaries"]
+offset_left = -20.0
+offset_top = 610.0
+offset_right = 1180.0
+offset_bottom = 660.0
+color = Color(0.18, 0.22, 0.28, 1)
+
+[node name="WallLeft" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(-10, 324)
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="WallRight" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(1162, 324)
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Station_WreckingBall" type="Node2D" parent="."]
+position = Vector2(340, 100)
+
+[node name="Anchor" type="Node2D" parent="Station_WreckingBall"]
+
+[node name="Rope" type="Node2D" parent="Station_WreckingBall" groups=["verlet_physics_2d"]]
+script = ExtResource("2_rope")
+length = 260.0
+segment_count = 14
+pin_start = true
+pin_end = true
+attach_end_to = NodePath("../HeavyBall")
+rope_width = 6.0
+rope_color = Color(0.35, 0.38, 0.45, 1)
+
+[node name="HeavyBall" type="RigidBody2D" parent="Station_WreckingBall"]
+position = Vector2(0, 260)
+mass = 12.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Station_WreckingBall/HeavyBall"]
+shape = SubResource("CircleShape2D_wreck")
+
+[node name="Polygon2D" type="Polygon2D" parent="Station_WreckingBall/HeavyBall"]
+color = Color(0.75, 0.2, 0.25, 1)
+polygon = PackedVector2Array(32, 0, 29, 12, 22, 22, 12, 29, 0, 32, -12, 29, -22, 22, -29, 12, -32, 0, -29, -12, -22, -22, -12, -29, 0, -32, 12, -29, 22, -22, 29, -12)
+
+[node name="Crates" type="Node2D" parent="Station_WreckingBall"]
+position = Vector2(90, 480)
+
+[node name="Crate1" type="RigidBody2D" parent="Station_WreckingBall/Crates"]
+position = Vector2(-20, 10)
+mass = 1.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Station_WreckingBall/Crates/Crate1"]
+shape = SubResource("RectangleShape2D_crate")
+
+[node name="ColorRect" type="ColorRect" parent="Station_WreckingBall/Crates/Crate1"]
+offset_left = -19.0
+offset_top = -19.0
+offset_right = 19.0
+offset_bottom = 19.0
+color = Color(0.72, 0.52, 0.32, 1)
+
+[node name="Crate2" type="RigidBody2D" parent="Station_WreckingBall/Crates"]
+position = Vector2(22, 10)
+mass = 1.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Station_WreckingBall/Crates/Crate2"]
+shape = SubResource("RectangleShape2D_crate")
+
+[node name="ColorRect" type="ColorRect" parent="Station_WreckingBall/Crates/Crate2"]
+offset_left = -19.0
+offset_top = -19.0
+offset_right = 19.0
+offset_bottom = 19.0
+color = Color(0.72, 0.52, 0.32, 1)
+
+[node name="Crate3" type="RigidBody2D" parent="Station_WreckingBall/Crates"]
+position = Vector2(0, -30)
+mass = 1.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Station_WreckingBall/Crates/Crate3"]
+shape = SubResource("RectangleShape2D_crate")
+
+[node name="ColorRect" type="ColorRect" parent="Station_WreckingBall/Crates/Crate3"]
+offset_left = -19.0
+offset_top = -19.0
+offset_right = 19.0
+offset_bottom = 19.0
+color = Color(0.72, 0.52, 0.32, 1)
+
+[node name="Station_Bridge" type="Node2D" parent="."]
+position = Vector2(560, 440)
+
+[node name="BridgeAnchorA" type="Node2D" parent="Station_Bridge"]
+position = Vector2(0, 0)
+
+[node name="BridgeAnchorB" type="Node2D" parent="Station_Bridge"]
+position = Vector2(300, 0)
+
+[node name="RopeBridge" type="Node2D" parent="Station_Bridge" groups=["verlet_physics_2d"]]
+script = ExtResource("2_rope")
+length = 330.0
+segment_count = 14
+slack_ratio = 1.15
+pin_start = true
+pin_end = true
+attach_end_to = NodePath("../BridgeAnchorB")
+rope_width = 7.0
+rope_color = Color(0.78, 0.58, 0.38, 1)
+
+[node name="Station_SoftBody" type="Node2D" parent="."]
+position = Vector2(100, 320)
+
+[node name="Ramp" type="StaticBody2D" parent="Station_SoftBody"]
+rotation = 0.4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Station_SoftBody/Ramp"]
+shape = SubResource("RectangleShape2D_ramp")
+
+[node name="ColorRect" type="ColorRect" parent="Station_SoftBody/Ramp"]
+offset_left = -110.0
+offset_top = -10.0
+offset_right = 110.0
+offset_bottom = 10.0
+color = Color(0.3, 0.35, 0.42, 1)
+
+[node name="JellyBlob" type="Node2D" parent="Station_SoftBody" groups=["verlet_physics_2d"]]
+position = Vector2(-30, -90)
+script = ExtResource("4_soft")
+radius = 36.0
+point_count = 12
+elasticity_stiffness = 0.88
+internal_spoke_stiffness = 0.78
+bounce_factor = 0.7
+
+[node name="Station_Cloth" type="Node2D" parent="."]
+position = Vector2(980, 160)
+
+[node name="Banner" type="Node2D" parent="Station_Cloth" groups=["verlet_physics_2d"]]
+script = ExtResource("3_cloth")
+resolution = Vector2i(8, 8)
+cloth_size = Vector2(120, 140)
+wind_vector = Vector2(400, 40)
+cloth_color = Color(0.2, 0.55, 0.95, 1)
+
+[node name="Station_Chain" type="Node2D" parent="."]
+position = Vector2(600, 180)
+
+[node name="ChainAnchorA" type="Node2D" parent="Station_Chain"]
+position = Vector2(0, 0)
+
+[node name="ChainAnchorB" type="Node2D" parent="Station_Chain"]
+position = Vector2(220, 0)
+
+[node name="IronChain2D" type="Node2D" parent="Station_Chain" groups=["verlet_physics_2d"]]
+script = ExtResource("2_rope")
+length = 260.0
+segment_count = 12
+slack_ratio = 1.25
+pin_start = true
+pin_end = true
+attach_end_to = NodePath("../ChainAnchorB")
+render_mode = 1
+rope_width = 8.0
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Verlet Dynamics 2D - Physics Playground"
+
+[node name="PanelStats" type="PanelContainer" parent="HUD/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="VBox" type="VBoxContainer" parent="HUD/MarginContainer/VBoxContainer/PanelStats"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="FPSLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+layout_mode = 2
+text = "FPS: 60"
+
+[node name="ParticlesLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+layout_mode = 2
+text = "Simulated 2D Particles: 0"
+
+[node name="ConstraintsLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+layout_mode = 2
+text = "Active 2D Constraints: 0"
+
+[node name="StatusLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+layout_mode = 2
+text = "Interaction: Ready"
+
+[node name="HBoxButtons" type="HBoxContainer" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WindButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(160, 36)
+layout_mode = 2
+text = "Wind: ON [450 px/s]"
+
+[node name="TensionButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(160, 36)
+layout_mode = 2
+text = "Tension: OFF"
+
+[node name="SpawnButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(170, 36)
+layout_mode = 2
+text = "Drop 2D Ball (B/Space)"
+
+[node name="ResetButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+text = "Reset (R)"
+
+[node name="Switch3DButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(180, 36)
+layout_mode = 2
+text = "Switch to 3D Playground ➜"
+
+[node name="Spacer" type="Control" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Instructions" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.25, 0.35, 1)
+text = "2D Physics Controls:
+• Left-Mouse Click & Drag: Grab and pull any rope, slime, or banner particle in real-time
+• Right-Mouse Click or 'C': Cut rope segment or tear banner under cursor
+• Space or 'B': Drop rolling 2D physics ball at cursor
+• 'W': Toggle wind blower | 'T': Toggle Tension stress heatmap
+• 'R': Reset scene | Click 'Switch to 3D Playground' to return to 3D mode"

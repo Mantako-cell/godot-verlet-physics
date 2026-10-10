@@ -17,6 +17,7 @@ const VerletAudioSynth = preload("verlet_audio_synth.gd")
 @onready var grapple_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/GrappleButton
 @onready var spawn_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/SpawnButton
 @onready var reset_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/ResetButton
+@onready var switch_2d_btn: Button = get_node_or_null("HUD/MarginContainer/VBoxContainer/HBoxButtons/Switch2DButton")
 
 enum WindMode {
 	DIRECTIONAL,
@@ -40,6 +41,8 @@ func _ready() -> void:
 		spawn_btn.pressed.connect(_spawn_physics_ball)
 	if is_instance_valid(reset_btn):
 		reset_btn.pressed.connect(_reset_scene)
+	if is_instance_valid(switch_2d_btn):
+		switch_2d_btn.pressed.connect(_switch_to_2d)
 
 	if is_instance_valid(camera) and camera.has_signal("interaction_hint_updated"):
 		camera.connect("interaction_hint_updated", _on_hint_updated)
@@ -196,3 +199,7 @@ func _reset_scene() -> void:
 func _on_hint_updated(text: String) -> void:
 	if is_instance_valid(status_label):
 		status_label.text = "Interaction: " + text
+
+
+func _switch_to_2d() -> void:
+	get_tree().change_scene_to_file("res://demo/scenes/showcase_world_2d.tscn")

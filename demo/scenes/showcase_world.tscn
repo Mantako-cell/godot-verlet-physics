@@ -364,6 +364,11 @@ custom_minimum_size = Vector2(120, 36)
 layout_mode = 2
 text = "Reset Scene (R)"
 
+[node name="Switch2DButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(180, 36)
+layout_mode = 2
+text = "Switch to 2D Playground ➜"
+
 [node name="Spacer" type="Control" parent="HUD/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
