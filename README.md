@@ -1,6 +1,6 @@
-# VerletDynamics3D for Godot 4.x
+# VerletDynamics3D for Godot 4.7+
 
-A high-performance, pure GDScript 3D Verlet physics engine and node toolkit for Godot 4.x. Designed for instant drop-in integration without any C++ compilation, external native dependencies, or .NET setup.
+A high-performance, pure GDScript 3D Verlet physics engine and node toolkit optimized for **Godot 4.7+** (and compatible with 4.x). Designed for instant drop-in integration without any C++ compilation, external native dependencies, or .NET setup.
 
 ---
 

@@ -382,14 +382,14 @@ func _solve_collisions(space_state: PhysicsDirectSpaceState3D) -> void:
 		else:
 			cast_target += Vector3.DOWN * collision_radius
 
-		var query = PhysicsRayQueryParameters3D.create(p.prev_position, cast_target, collision_mask)
 		# Exclude attached bodies so rope doesn't collide with its own anchor
 		var excludes: Array[RID] = []
 		if is_instance_valid(_start_rigidbody):
 			excludes.append(_start_rigidbody.get_rid())
 		if is_instance_valid(_end_rigidbody):
 			excludes.append(_end_rigidbody.get_rid())
-		query.exclude = excludes
+
+		var query = PhysicsRayQueryParameters3D.create(p.prev_position, cast_target, collision_mask, excludes)
 
 		var hit = space_state.intersect_ray(query)
 		if not hit.is_empty():

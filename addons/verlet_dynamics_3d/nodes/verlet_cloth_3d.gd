@@ -84,7 +84,7 @@ enum PinPreset {
 @export var double_sided_lighting: bool = true
 
 # Internal Runtime Data
-var particles: Array = [] # 2D array: particles[x][y]
+var particles: Array[Array] = [] # 2D array: particles[x][y] of VerletParticle3D
 var structural_constraints: Array[VerletConstraint3D] = []
 var shear_constraints: Array[VerletConstraint3D] = []
 var bending_constraints: Array[VerletConstraint3D] = []
@@ -336,7 +336,13 @@ func _solve_cloth_collisions(space_state: PhysicsDirectSpaceState3D) -> void:
 			else:
 				cast_target += Vector3.DOWN * collision_radius
 
-			var query = PhysicsRayQueryParameters3D.create(p.prev_position, cast_target, collision_mask)
+			var excludes: Array[RID] = []
+			if is_instance_valid(_node_a_cache) and _node_a_cache is CollisionObject3D:
+				excludes.append((_node_a_cache as CollisionObject3D).get_rid())
+			if is_instance_valid(_node_b_cache) and _node_b_cache is CollisionObject3D:
+				excludes.append((_node_b_cache as CollisionObject3D).get_rid())
+
+			var query = PhysicsRayQueryParameters3D.create(p.prev_position, cast_target, collision_mask, excludes)
 			var hit = space_state.intersect_ray(query)
 			if not hit.is_empty():
 				var hit_pos: Vector3 = hit.position
