@@ -120,12 +120,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.5, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.5, 0)
 script = ExtResource("3_rope")
 length = 4.5
-segment_count = 14
+segment_count = 10
 pin_start = true
 pin_end = true
 attach_end_to = NodePath("../HeavyBallBody")
 rope_radius = 0.045
-solver_iterations = 14
+solver_iterations = 6
 breakable = true
 break_tension_threshold = 1200.0
 
@@ -178,9 +178,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5, 0, -1.0)
 [node name="FlutteringCloth" type="Node3D" parent="Station_Cloth" groups=["verlet_physics"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.0, 0)
 script = ExtResource("4_cloth")
-resolution = Vector2i(14, 14)
+resolution = Vector2i(8, 8)
 cloth_size = Vector2(3.0, 2.5)
 wind_vector = Vector3(6.0, 1.0, 0.0)
+solver_iterations = 5
+collision_enabled = false
+enable_bending_constraints = false
 material = SubResource("StandardMaterial3D_cloth")
 
 [node name="Station_Chain" type="Node3D" parent="."]
@@ -196,13 +199,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.0, 4.5, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0, 4.5, 0)
 script = ExtResource("3_rope")
 length = 4.8
-segment_count = 14
+segment_count = 10
 slack_ratio = 1.2
 pin_start = true
 pin_end = true
 attach_end_to = NodePath("../ChainAnchorB")
 render_mode = 1
-solver_iterations = 12
+solver_iterations = 6
 
 [node name="Station_SoftVolume" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.0, 0, 2.5)
@@ -250,11 +253,13 @@ surface_material_override/0 = SubResource("StandardMaterial3D_metal")
 [node name="TrampolineCloth" type="Node3D" parent="Station_Trampoline" groups=["verlet_physics"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
 script = ExtResource("4_cloth")
-resolution = Vector2i(10, 10)
+resolution = Vector2i(7, 7)
 cloth_size = Vector2(3.0, 3.0)
 pin_preset = 2
 structural_stiffness = 0.98
 shear_stiffness = 0.8
+solver_iterations = 6
+enable_bending_constraints = false
 damping = 0.992
 material = SubResource("StandardMaterial3D_trampoline")
 
@@ -272,20 +277,24 @@ radius = 7.0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0, 4.5, 0)
 script = ExtResource("3_rope")
 length = 3.6
-segment_count = 12
+segment_count = 8
 rope_radius = 0.02
 pin_start = true
 pin_end = false
+collision_enabled = false
+solver_iterations = 4
 visualize_tension = true
 
 [node name="WhirlwindRibbonB" type="Node3D" parent="Station_Whirlwind" groups=["verlet_physics"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.0, 4.5, 0)
 script = ExtResource("3_rope")
 length = 3.6
-segment_count = 12
+segment_count = 8
 rope_radius = 0.02
 pin_start = true
 pin_end = false
+collision_enabled = false
+solver_iterations = 4
 visualize_tension = true
 
 [node name="HUD" type="CanvasLayer" parent="."]

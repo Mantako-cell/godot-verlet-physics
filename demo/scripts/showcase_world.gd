@@ -229,10 +229,12 @@ func _apply_quality_profile() -> void:
 		sun_light.shadow_enabled = not igpu_mode
 
 	# Adjust solver iterations across all Verlet nodes
-	var target_iters = 6 if igpu_mode else 12
+	var target_iters = 4 if igpu_mode else 10
 	for node in get_tree().get_nodes_in_group("verlet_physics"):
 		if "solver_iterations" in node:
 			node.solver_iterations = target_iters
+		if "enable_bending_constraints" in node:
+			node.enable_bending_constraints = not igpu_mode
 
 	if is_instance_valid(quality_btn):
 		quality_btn.text = "Profile: iGPU / Fast (P)" if igpu_mode else "Profile: High / dGPU (P)"
