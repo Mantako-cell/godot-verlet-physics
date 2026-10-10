@@ -33,7 +33,7 @@ func _init(
 
 
 func solve() -> bool:
-	if not is_active or p1 == null or p2 == null:
+	if not is_active:
 		return false
 
 	var delta: Vector3 = p1.position - p2.position
@@ -42,24 +42,25 @@ func solve() -> bool:
 		return false
 
 	var diff: float = current_distance - rest_length
-	current_elongation = diff
-	current_tension = absf(diff) * stiffness * 100.0
 
-	# Check snapping
-	if can_break and current_tension > break_tension_limit:
-		is_active = false
-		return true # Snapped
+	# Check snapping only if breakable
+	if can_break:
+		current_elongation = diff
+		current_tension = absf(diff) * stiffness * 100.0
+		if current_tension > break_tension_limit:
+			is_active = false
+			return true # Snapped
 
 	var total_inv_mass: float = p1.inv_mass + p2.inv_mass
 	if total_inv_mass <= 0.000001:
 		return false
 
-	var normal: Vector3 = delta / current_distance
-	var correction: Vector3 = normal * diff * stiffness
+	var factor: float = (diff / current_distance) * (stiffness / total_inv_mass)
+	var corr: Vector3 = delta * factor
 
 	if not p1.is_pinned:
-		p1.position -= correction * (p1.inv_mass / total_inv_mass)
+		p1.position -= corr * p1.inv_mass
 	if not p2.is_pinned:
-		p2.position += correction * (p2.inv_mass / total_inv_mass)
+		p2.position += corr * p2.inv_mass
 
 	return false

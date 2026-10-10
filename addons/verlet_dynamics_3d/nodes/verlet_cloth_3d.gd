@@ -56,8 +56,9 @@ enum PinPreset {
 @export_range(0.8, 0.999, 0.001) var damping: float = 0.985
 @export_range(0.1, 1.0, 0.05) var structural_stiffness: float = 0.95
 @export_range(0.0, 1.0, 0.05) var shear_stiffness: float = 0.6
+@export var enable_bending_constraints: bool = false
 @export_range(0.0, 1.0, 0.05) var bending_stiffness: float = 0.25
-@export_range(1, 25, 1) var solver_iterations: int = 8
+@export_range(1, 25, 1) var solver_iterations: int = 6
 @export_range(0.005, 1.0, 0.005) var particle_mass: float = 0.04
 
 # --- Wind & Aerodynamics ---
@@ -188,14 +189,15 @@ func _rebuild_cloth() -> void:
 			shear_constraints.append(c_d2)
 
 	# 3. Bending / Flexion constraints (skip 1 neighbor to resist severe creases)
-	for x in range(w_particles):
-		for y in range(h_particles):
-			if x < w_particles - 2:
-				var c_bx = VerletConstraint3D.new(particles[x][y], particles[x + 2][y], step_x * 2.0, bending_stiffness)
-				bending_constraints.append(c_bx)
-			if y < h_particles - 2:
-				var c_by = VerletConstraint3D.new(particles[x][y], particles[x][y + 2], step_y * 2.0, bending_stiffness)
-				bending_constraints.append(c_by)
+	if enable_bending_constraints:
+		for x in range(w_particles):
+			for y in range(h_particles):
+				if x < w_particles - 2:
+					var c_bx = VerletConstraint3D.new(particles[x][y], particles[x + 2][y], step_x * 2.0, bending_stiffness)
+					bending_constraints.append(c_bx)
+				if y < h_particles - 2:
+					var c_by = VerletConstraint3D.new(particles[x][y], particles[x][y + 2], step_y * 2.0, bending_stiffness)
+					bending_constraints.append(c_by)
 
 	_apply_pins()
 
@@ -308,8 +310,9 @@ func _physics_process(delta: float) -> void:
 			c.solve()
 		for c in shear_constraints:
 			c.solve()
-		for c in bending_constraints:
-			c.solve()
+		if enable_bending_constraints:
+			for c in bending_constraints:
+				c.solve()
 
 	# 6. Continuous World Collisions
 	if collision_enabled and is_inside_tree():
