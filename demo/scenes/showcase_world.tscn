@@ -23,7 +23,7 @@ ambient_light_source = 3
 ambient_light_color = Color(0.6, 0.65, 0.75, 1)
 ambient_light_energy = 0.85
 tonemap_mode = 3
-glow_enabled = true
+glow_enabled = false
 glow_bloom = 0.2
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
@@ -95,7 +95,7 @@ environment = SubResource("Environment_1")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 14, 0)
-shadow_enabled = true
+shadow_enabled = false
 
 [node name="Floor" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
@@ -363,6 +363,11 @@ text = "Drop Ball (B/Space)"
 custom_minimum_size = Vector2(120, 36)
 layout_mode = 2
 text = "Reset Scene (R)"
+
+[node name="QualityButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(170, 36)
+layout_mode = 2
+text = "Profile: iGPU / Fast (P)"
 
 [node name="Switch2DButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
 custom_minimum_size = Vector2(180, 36)

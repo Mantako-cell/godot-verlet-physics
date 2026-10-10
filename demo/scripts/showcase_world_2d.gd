@@ -58,6 +58,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_toggle_tension_heatmap()
 			KEY_C:
 				_try_cut_under_cursor_2d(get_viewport().get_mouse_position())
+			KEY_3:
+				_switch_to_3d()
 
 
 func _process(_delta: float) -> void:

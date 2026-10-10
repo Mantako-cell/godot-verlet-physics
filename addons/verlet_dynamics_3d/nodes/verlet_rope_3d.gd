@@ -81,7 +81,7 @@ enum RenderMode {
 @export var gravity: Vector3 = Vector3(0.0, -9.8, 0.0)
 @export_range(0.8, 0.999, 0.001) var damping: float = 0.985
 @export_range(0.1, 1.0, 0.01) var stiffness: float = 0.95
-@export_range(1, 30, 1) var solver_iterations: int = 12
+@export_range(1, 30, 1) var solver_iterations: int = 8
 @export_range(0.01, 10.0, 0.05) var particle_mass: float = 0.2
 
 # --- Snapping & Breaking ---
@@ -148,6 +148,7 @@ var _dynamic_mesh: ArrayMesh = null
 
 var _time_accumulator: float = 0.0
 var _is_initialized: bool = false
+var _cached_tube_indices: PackedInt32Array = PackedInt32Array()
 
 
 func _ready() -> void:
@@ -239,6 +240,7 @@ func _safe_pos() -> Vector3:
 func _rebuild_rope() -> void:
 	particles.clear()
 	constraints.clear()
+	_cached_tube_indices.clear()
 
 	var current_xform: Transform3D = _safe_xform()
 	var start_pos: Vector3 = _safe_pos()
@@ -505,8 +507,18 @@ func _render_tube_mesh() -> void:
 		frames_n.append(cur_n)
 		frames_b.append(cur_b)
 
-	var colors: PackedColorArray = PackedColorArray()
+	if _cached_tube_indices.is_empty():
+		_rebuild_tube_indices()
 
+	var total_verts: int = rings * radial_segments
+	verts.resize(total_verts)
+	normals.resize(total_verts)
+	uvs.resize(total_verts)
+	var colors: PackedColorArray = PackedColorArray()
+	if visualize_tension:
+		colors.resize(total_verts)
+
+	var v_idx: int = 0
 	# Generate cylinder rings
 	for r in range(rings):
 		var center = pts[r]
@@ -532,13 +544,30 @@ func _render_tube_mesh() -> void:
 			var circle_dir = (n_vec * cos_t + b_vec * sin_t).normalized()
 			var vert_pos = center + (circle_dir * rope_radius)
 
-			verts.append(vert_pos)
-			normals.append(circle_dir)
-			uvs.append(Vector2(float(s) / float(radial_segments), v_coord * (length / (rope_radius * 2.0))))
+			verts[v_idx] = vert_pos
+			normals[v_idx] = circle_dir
+			uvs[v_idx] = Vector2(float(s) / float(radial_segments), v_coord * (length / (rope_radius * 2.0)))
 			if visualize_tension:
-				colors.append(ring_color)
+				colors[v_idx] = ring_color
+			v_idx += 1
 
-	# Generate indices (connect rings with quads)
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	if visualize_tension:
+		arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = _cached_tube_indices
+
+	_dynamic_mesh.clear_surfaces()
+	if verts.size() > 0 and _cached_tube_indices.size() > 0:
+		_dynamic_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+
+
+func _rebuild_tube_indices() -> void:
+	var rings: int = particles.size()
+	_cached_tube_indices.clear()
 	for r in range(rings - 1):
 		# If a constraint between r and r+1 was broken, don't generate mesh connection!
 		if r < constraints.size() and not constraints[r].is_active:
@@ -555,27 +584,15 @@ func _render_tube_mesh() -> void:
 			var i3 = cur_row + next_s
 
 			# Triangle 1
-			indices.append(i0)
-			indices.append(i1)
-			indices.append(i2)
+			_cached_tube_indices.append(i0)
+			_cached_tube_indices.append(i1)
+			_cached_tube_indices.append(i2)
 
 			# Triangle 2
-			indices.append(i0)
-			indices.append(i2)
-			indices.append(i3)
+			_cached_tube_indices.append(i0)
+			_cached_tube_indices.append(i2)
+			_cached_tube_indices.append(i3)
 
-	var arrays: Array = []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	if visualize_tension and colors.size() == verts.size():
-		arrays[Mesh.ARRAY_COLOR] = colors
-	arrays[Mesh.ARRAY_INDEX] = indices
-
-	_dynamic_mesh.clear_surfaces()
-	if verts.size() > 0 and indices.size() > 0:
-		_dynamic_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 
 
 func _render_chain_links() -> void:

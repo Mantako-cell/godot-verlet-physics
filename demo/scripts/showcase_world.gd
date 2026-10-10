@@ -17,7 +17,10 @@ const VerletAudioSynth = preload("verlet_audio_synth.gd")
 @onready var grapple_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/GrappleButton
 @onready var spawn_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/SpawnButton
 @onready var reset_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/ResetButton
+@onready var quality_btn: Button = get_node_or_null("HUD/MarginContainer/VBoxContainer/HBoxButtons/QualityButton")
 @onready var switch_2d_btn: Button = get_node_or_null("HUD/MarginContainer/VBoxContainer/HBoxButtons/Switch2DButton")
+@onready var world_env: WorldEnvironment = $WorldEnvironment
+@onready var sun_light: DirectionalLight3D = $DirectionalLight3D
 
 enum WindMode {
 	DIRECTIONAL,
@@ -27,6 +30,7 @@ enum WindMode {
 
 var current_wind_mode: WindMode = WindMode.DIRECTIONAL
 var tension_heatmap_active: bool = false
+var igpu_mode: bool = true
 var _ball_count: int = 0
 
 
@@ -41,6 +45,8 @@ func _ready() -> void:
 		spawn_btn.pressed.connect(_spawn_physics_ball)
 	if is_instance_valid(reset_btn):
 		reset_btn.pressed.connect(_reset_scene)
+	if is_instance_valid(quality_btn):
+		quality_btn.pressed.connect(_toggle_quality_mode)
 	if is_instance_valid(switch_2d_btn):
 		switch_2d_btn.pressed.connect(_switch_to_2d)
 
@@ -48,6 +54,7 @@ func _ready() -> void:
 		camera.connect("interaction_hint_updated", _on_hint_updated)
 
 	_apply_wind_mode()
+	_apply_quality_profile()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -61,6 +68,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_cycle_wind_mode()
 			KEY_T:
 				_toggle_tension_heatmap()
+			KEY_P:
+				_toggle_quality_mode()
+			KEY_2:
+				_switch_to_2d()
 
 
 func _process(_delta: float) -> void:
@@ -203,3 +214,28 @@ func _on_hint_updated(text: String) -> void:
 
 func _switch_to_2d() -> void:
 	get_tree().change_scene_to_file("res://demo/scenes/showcase_world_2d.tscn")
+
+
+func _toggle_quality_mode() -> void:
+	igpu_mode = not igpu_mode
+	_apply_quality_profile()
+
+
+func _apply_quality_profile() -> void:
+	if is_instance_valid(world_env) and world_env.environment:
+		world_env.environment.glow_enabled = not igpu_mode
+
+	if is_instance_valid(sun_light):
+		sun_light.shadow_enabled = not igpu_mode
+
+	# Adjust solver iterations across all Verlet nodes
+	var target_iters = 6 if igpu_mode else 12
+	for node in get_tree().get_nodes_in_group("verlet_physics"):
+		if "solver_iterations" in node:
+			node.solver_iterations = target_iters
+
+	if is_instance_valid(quality_btn):
+		quality_btn.text = "Profile: iGPU / Fast (P)" if igpu_mode else "Profile: High / dGPU (P)"
+
+	_on_hint_updated("Switched to %s mode!" % ("iGPU High-FPS" if igpu_mode else "High Fidelity"))
+

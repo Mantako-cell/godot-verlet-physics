@@ -6,9 +6,9 @@ config_version=5
 
 [application]
 
-config/name="Verlet Dynamics 3D - Showcase"
+config/name="Verlet Dynamics (2D & 3D) - Showcase"
 run/main_scene="res://demo/scenes/showcase_world.tscn"
-config/features=PackedStringArray("4.7", "Forward Plus")
+config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://addons/verlet_dynamics_3d/icons/icon_rope.svg"
 
 [editor_plugins]
@@ -17,5 +17,8 @@ enabled=PackedStringArray("res://addons/verlet_dynamics_3d/plugin.cfg")
 
 [rendering]
 
-anti_aliasing/quality/msaa_3d=2
-textures/vram_compression/import_etc2_astc=true
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+anti_aliasing/quality/msaa_3d=0
+anti_aliasing/quality/screen_space_aa=0
+environment/defaults/default_clear_color=Color(0.12, 0.14, 0.18, 1)

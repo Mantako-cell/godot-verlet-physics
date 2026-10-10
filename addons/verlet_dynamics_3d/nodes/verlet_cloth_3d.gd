@@ -96,6 +96,9 @@ var _mesh_instance: MeshInstance3D = null
 var _dynamic_mesh: ArrayMesh = null
 var _time_acc: float = 0.0
 
+var _cached_uvs: PackedVector2Array = PackedVector2Array()
+var _cached_indices: PackedInt32Array = PackedInt32Array()
+
 
 func _ready() -> void:
 	_cache_anchors()
@@ -357,34 +360,18 @@ func _solve_cloth_collisions(space_state: PhysicsDirectSpaceState3D) -> void:
 				p.prev_position = p.position - (tangent_vel * (1.0 - friction))
 
 
-func _update_cloth_mesh() -> void:
-	if not is_instance_valid(_mesh_instance) or not is_instance_valid(_dynamic_mesh):
-		return
-
+func _rebuild_cloth_indices_and_uvs() -> void:
 	var w = resolution.x
 	var h = resolution.y
 	var total_verts: int = w * h
 
-	var verts: PackedVector3Array = PackedVector3Array()
-	verts.resize(total_verts)
-	var normals: PackedVector3Array = PackedVector3Array()
-	normals.resize(total_verts)
-	var uvs: PackedVector2Array = PackedVector2Array()
-	uvs.resize(total_verts)
-
-	var inv_xform = _safe_xform().affine_inverse()
-
-	# Populate vertices and UVs
+	_cached_uvs.resize(total_verts)
 	for x in range(w):
 		for y in range(h):
 			var idx: int = y * w + x
-			verts[idx] = inv_xform * particles[x][y].position
-			uvs[idx] = Vector2(float(x) / float(w - 1), float(y) / float(h - 1))
-			normals[idx] = Vector3.ZERO
+			_cached_uvs[idx] = Vector2(float(x) / float(w - 1), float(y) / float(h - 1))
 
-	# Generate Indices and calculate smooth vertex normals
-	var indices: PackedInt32Array = PackedInt32Array()
-
+	_cached_indices.clear()
 	for x in range(w - 1):
 		for y in range(h - 1):
 			var i00 = y * w + x
@@ -393,45 +380,75 @@ func _update_cloth_mesh() -> void:
 			var i11 = (y + 1) * w + (x + 1)
 
 			# Tri 1: i00, i10, i01
-			indices.append(i00)
-			indices.append(i10)
-			indices.append(i01)
+			_cached_indices.append(i00)
+			_cached_indices.append(i10)
+			_cached_indices.append(i01)
 
 			# Tri 2: i10, i11, i01
-			indices.append(i10)
-			indices.append(i11)
-			indices.append(i01)
+			_cached_indices.append(i10)
+			_cached_indices.append(i11)
+			_cached_indices.append(i01)
 
-			# Normal accumulator
-			var v00 = verts[i00]
-			var v10 = verts[i10]
-			var v01 = verts[i01]
-			var v11 = verts[i11]
 
-			var n1 = (v10 - v00).cross(v01 - v00)
-			var n2 = (v11 - v10).cross(v01 - v10)
+func _update_cloth_mesh() -> void:
+	if not is_instance_valid(_mesh_instance) or not is_instance_valid(_dynamic_mesh):
+		return
 
-			normals[i00] += n1
-			normals[i10] += n1 + n2
-			normals[i01] += n1 + n2
-			normals[i11] += n2
+	var w = resolution.x
+	var h = resolution.y
+	var total_verts: int = w * h
+
+	if _cached_indices.is_empty() or _cached_uvs.size() != total_verts:
+		_rebuild_cloth_indices_and_uvs()
+
+	var verts: PackedVector3Array = PackedVector3Array()
+	verts.resize(total_verts)
+	var normals: PackedVector3Array = PackedVector3Array()
+	normals.resize(total_verts)
+
+	var inv_xform = _safe_xform().affine_inverse()
+
+	# Populate vertices
+	for x in range(w):
+		for y in range(h):
+			var idx: int = y * w + x
+			verts[idx] = inv_xform * particles[x][y].position
+			normals[idx] = Vector3.ZERO
+
+	# Fast triangle-based normal calculation
+	var num_indices: int = _cached_indices.size()
+	var i: int = 0
+	while i < num_indices:
+		var i0 = _cached_indices[i]
+		var i1 = _cached_indices[i + 1]
+		var i2 = _cached_indices[i + 2]
+		i += 3
+
+		var v0 = verts[i0]
+		var v1 = verts[i1]
+		var v2 = verts[i2]
+		var fn = (v1 - v0).cross(v2 - v0)
+		normals[i0] += fn
+		normals[i1] += fn
+		normals[i2] += fn
 
 	# Normalize accumulated normals
-	for i in range(total_verts):
-		if normals[i].length_squared() > 0.0001:
-			normals[i] = normals[i].normalized()
+	for idx in range(total_verts):
+		if normals[idx].length_squared() > 0.0001:
+			normals[idx] = normals[idx].normalized()
 		else:
-			normals[i] = Vector3.FORWARD
+			normals[idx] = Vector3.FORWARD
 
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	arrays[Mesh.ARRAY_INDEX] = indices
+	arrays[Mesh.ARRAY_TEX_UV] = _cached_uvs
+	arrays[Mesh.ARRAY_INDEX] = _cached_indices
 
 	_dynamic_mesh.clear_surfaces()
 	_dynamic_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+
 
 
 # =============================================================================
@@ -455,6 +472,7 @@ func tear_at(coord_x: int, coord_y: int) -> void:
 		if c.p1 == target_p or c.p2 == target_p:
 			c.is_active = false
 
+	_cached_indices.clear()
 	cloth_torn.emit(coord_x, coord_y)
 
 
