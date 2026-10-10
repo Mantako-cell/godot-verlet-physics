@@ -50,27 +50,45 @@ func _physics_process(delta: float) -> void:
 			_apply_to_cloth(node, current_wind_power)
 
 
+func _get_wind_vector_at(target_pos: Vector3, power: float) -> Vector3:
+	var cur_pos: Vector3 = global_position if is_inside_tree() else position
+	var delta: Vector3 = target_pos - cur_pos
+	var dist: float = delta.length()
+	if dist >= radius or dist < 0.001:
+		return Vector3.ZERO
+
+	var falloff: float = 1.0 - (dist / radius)
+	var dir: Vector3 = Vector3.ZERO
+
+	match wind_type:
+		WindType.DIRECTIONAL:
+			var base_basis = global_transform.basis if is_inside_tree() else transform.basis
+			dir = (base_basis * wind_direction).normalized()
+		WindType.RADIAL_OUTWARD:
+			dir = delta / dist
+		WindType.VORTEX_SWIRL:
+			var tangent = Vector3(-delta.z, 0.0, delta.x).normalized()
+			dir = (tangent * 0.85 + Vector3.UP * 0.35).normalized()
+
+	return dir * power * falloff
+
+
 func _apply_to_rope(rope: VerletRope3D, power: float) -> void:
-	var wind_dir = (global_transform.basis * wind_direction).normalized()
 	for p in rope.particles:
-		var dist = global_position.distance_to(p.position)
-		if dist < radius:
-			var falloff = 1.0 - (dist / radius)
-			var force = wind_dir * power * falloff
+		var force = _get_wind_vector_at(p.position, power)
+		if force != Vector3.ZERO:
 			p.apply_force(force)
 
 
 func _apply_to_cloth(cloth: VerletCloth3D, power: float) -> void:
-	var wind_dir = (global_transform.basis * wind_direction).normalized()
 	var w = cloth.resolution.x
 	var h = cloth.resolution.y
 	for x in range(w):
 		for y in range(h):
 			var p = cloth.particles[x][y]
-			var dist = global_position.distance_to(p.position)
-			if dist < radius:
-				var falloff = 1.0 - (dist / radius)
-				p.apply_force(wind_dir * power * falloff)
+			var force = _get_wind_vector_at(p.position, power)
+			if force != Vector3.ZERO:
+				p.apply_force(force)
 
 
 func _on_area_entered(_area: Area3D) -> void:

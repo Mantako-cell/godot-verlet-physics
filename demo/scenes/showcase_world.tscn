@@ -1,10 +1,11 @@
-[gd_scene load_steps=21 format=3 uid="uid://c8yj7x4klm6op"]
+[gd_scene load_steps=26 format=3 uid="uid://c8yj7x4klm6op"]
 
 [ext_resource type="Script" path="res://demo/scripts/showcase_world.gd" id="1_world"]
 [ext_resource type="Script" path="res://demo/scripts/free_fly_camera.gd" id="2_cam"]
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_rope_3d.gd" id="3_rope"]
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_cloth_3d.gd" id="4_cloth"]
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_soft_volume_3d.gd" id="5_soft"]
+[ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_wind_area_3d.gd" id="6_wind"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 sky_top_color = Color(0.18, 0.24, 0.35, 1)
@@ -20,13 +21,13 @@ background_mode = 2
 sky = SubResource("Sky_1")
 ambient_light_source = 3
 ambient_light_color = Color(0.6, 0.65, 0.75, 1)
-ambient_light_energy = 0.8
+ambient_light_energy = 0.85
 tonemap_mode = 3
 glow_enabled = true
-glow_bloom = 0.15
+glow_bloom = 0.2
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
-size = Vector3(60, 1, 60)
+size = Vector3(70, 1, 70)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
 albedo_color = Color(0.14, 0.16, 0.2, 1)
@@ -34,7 +35,7 @@ roughness = 0.75
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 material = SubResource("StandardMaterial3D_floor")
-size = Vector3(60, 1, 60)
+size = Vector3(70, 1, 70)
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_ball"]
 radius = 0.65
@@ -65,11 +66,26 @@ cull_mode = 2
 albedo_color = Color(0.2, 0.55, 0.95, 1)
 roughness = 0.5
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_trampoline"]
+cull_mode = 2
+albedo_color = Color(0.9, 0.3, 0.7, 1)
+roughness = 0.4
+
 [sub_resource type="BoxShape3D" id="BoxShape3D_ramp"]
 size = Vector3(4, 0.4, 4)
 
 [sub_resource type="BoxMesh" id="BoxMesh_ramp"]
 size = Vector3(4, 0.4, 4)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_post"]
+top_radius = 0.08
+bottom_radius = 0.08
+height = 1.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_metal"]
+metallic = 0.85
+roughness = 0.3
+albedo_color = Color(0.6, 0.65, 0.7, 1)
 
 [node name="ShowcaseWorld" type="Node3D"]
 script = ExtResource("1_world")
@@ -78,7 +94,7 @@ script = ExtResource("1_world")
 environment = SubResource("Environment_1")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 12, 0)
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 14, 0)
 shadow_enabled = true
 
 [node name="Floor" type="StaticBody3D" parent="."]
@@ -91,7 +107,7 @@ shape = SubResource("BoxShape3D_floor")
 mesh = SubResource("BoxMesh_floor")
 
 [node name="FreeFlyCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.955336, 0.29552, 0, -0.29552, 0.955336, 0, 4.2, 8.5)
+transform = Transform3D(1, 0, 0, 0, 0.955336, 0.29552, 0, -0.29552, 0.955336, 0, 4.5, 9.5)
 script = ExtResource("2_cam")
 
 [node name="Station_WreckingBall" type="Node3D" parent="."]
@@ -110,6 +126,8 @@ pin_end = true
 attach_end_to = NodePath("../HeavyBallBody")
 rope_radius = 0.045
 solver_iterations = 14
+breakable = true
+break_tension_threshold = 1200.0
 
 [node name="HeavyBallBody" type="RigidBody3D" parent="Station_WreckingBall"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
@@ -155,7 +173,7 @@ shape = SubResource("BoxShape3D_crate")
 mesh = SubResource("BoxMesh_crate")
 
 [node name="Station_Cloth" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.0, 0, -1.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5, 0, -1.0)
 
 [node name="FlutteringCloth" type="Node3D" parent="Station_Cloth" groups=["verlet_physics"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.0, 0)
@@ -166,7 +184,7 @@ wind_vector = Vector3(6.0, 1.0, 0.0)
 material = SubResource("StandardMaterial3D_cloth")
 
 [node name="Station_Chain" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, -2.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.0, 0, -2.0)
 
 [node name="ChainAnchorA" type="Node3D" parent="Station_Chain"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0, 4.5, 0)
@@ -187,7 +205,7 @@ render_mode = 1
 solver_iterations = 12
 
 [node name="Station_SoftVolume" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0, 2.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.0, 0, 2.5)
 
 [node name="Ramp" type="StaticBody3D" parent="Station_SoftVolume"]
 transform = Transform3D(0.92388, 0.382683, 0, -0.382683, 0.92388, 0, 0, 0, 1, 0, 0.8, 0)
@@ -205,6 +223,70 @@ size = Vector3(1.1, 1.1, 1.1)
 elasticity_stiffness = 0.88
 internal_brace_stiffness = 0.75
 bounce_factor = 0.65
+
+[node name="Station_Trampoline" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, 3.5)
+
+[node name="Post1" type="MeshInstance3D" parent="Station_Trampoline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0.7, -1.5)
+mesh = SubResource("CylinderMesh_post")
+surface_material_override/0 = SubResource("StandardMaterial3D_metal")
+
+[node name="Post2" type="MeshInstance3D" parent="Station_Trampoline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.7, -1.5)
+mesh = SubResource("CylinderMesh_post")
+surface_material_override/0 = SubResource("StandardMaterial3D_metal")
+
+[node name="Post3" type="MeshInstance3D" parent="Station_Trampoline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0.7, 1.5)
+mesh = SubResource("CylinderMesh_post")
+surface_material_override/0 = SubResource("StandardMaterial3D_metal")
+
+[node name="Post4" type="MeshInstance3D" parent="Station_Trampoline"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.7, 1.5)
+mesh = SubResource("CylinderMesh_post")
+surface_material_override/0 = SubResource("StandardMaterial3D_metal")
+
+[node name="TrampolineCloth" type="Node3D" parent="Station_Trampoline" groups=["verlet_physics"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+script = ExtResource("4_cloth")
+resolution = Vector2i(10, 10)
+cloth_size = Vector2(3.0, 3.0)
+pin_preset = 2
+structural_stiffness = 0.98
+shear_stiffness = 0.8
+damping = 0.992
+material = SubResource("StandardMaterial3D_trampoline")
+
+[node name="Station_Whirlwind" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.5)
+
+[node name="TornadoArea" type="Area3D" parent="Station_Whirlwind"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+script = ExtResource("6_wind")
+wind_type = 2
+wind_strength = 0.0
+radius = 7.0
+
+[node name="WhirlwindRibbonA" type="Node3D" parent="Station_Whirlwind" groups=["verlet_physics"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0, 4.5, 0)
+script = ExtResource("3_rope")
+length = 3.6
+segment_count = 12
+rope_radius = 0.02
+pin_start = true
+pin_end = false
+visualize_tension = true
+
+[node name="WhirlwindRibbonB" type="Node3D" parent="Station_Whirlwind" groups=["verlet_physics"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.0, 4.5, 0)
+script = ExtResource("3_rope")
+length = 3.6
+segment_count = 12
+rope_radius = 0.02
+pin_start = true
+pin_end = false
+visualize_tension = true
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
@@ -229,7 +311,7 @@ theme_override_font_sizes/font_size = 22
 text = "Verlet Dynamics 3D - Physics Playground"
 
 [node name="PanelStats" type="PanelContainer" parent="HUD/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(320, 0)
+custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 
@@ -258,17 +340,27 @@ layout_mode = 2
 theme_override_constants/separation = 10
 
 [node name="WindButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(130, 36)
+custom_minimum_size = Vector2(160, 36)
 layout_mode = 2
-text = "Wind: ON [6.0 m/s]"
+text = "Wind: GALE (6 m/s)"
+
+[node name="TensionButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(170, 36)
+layout_mode = 2
+text = "Tension Heatmap: OFF"
+
+[node name="GrappleButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(160, 36)
+layout_mode = 2
+text = "Fire Grapple (G)"
 
 [node name="SpawnButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(140, 36)
+custom_minimum_size = Vector2(150, 36)
 layout_mode = 2
-text = "Drop Physics Ball (B)"
+text = "Drop Ball (B/Space)"
 
 [node name="ResetButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(110, 36)
+custom_minimum_size = Vector2(120, 36)
 layout_mode = 2
 text = "Reset Scene (R)"
 
@@ -278,11 +370,12 @@ size_flags_vertical = 3
 
 [node name="Instructions" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.8)
-text = "Controls:
+theme_override_colors/font_color = Color(0.85, 0.9, 0.95, 0.85)
+text = "Interactive Features:
 • Right-Mouse Drag: Orbit / Fly Camera
-• Left-Mouse Click & Drag: Grab and pull rope/cloth particles in real-time
-• Middle-Mouse Click: Snip rope or tear cloth under cursor
-• WASD / Space / Q: Fly camera navigation
-• 'B' or Space: Fire rolling physics sphere
-• 'W': Toggle wind gust generator | 'R': Reset simulation"
+• Left-Mouse Click & Drag: Grab & stretch any rope/cloth particle in 3D
+• 'G' / Grapple Button: Shoot physics grappling hook rope! (Scroll Wheel Up/Down to winch in/out!)
+• 'C' or Middle-Mouse: Laser slice ropes or tear cloth with spark burst FX
+• 'T': Toggle real-time Tension Heatmap (Green -> Yellow -> Red stress gradient)
+• 'W': Cycle Wind: Gale -> Whirlwind Tornado -> Off
+• 'B' or Space: Fire rolling physics sphere | 'R': Reset playground"

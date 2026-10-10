@@ -130,6 +130,8 @@ enum RenderMode {
 
 @export var chain_link_scale: Vector3 = Vector3(0.12, 0.12, 0.12)
 @export var chain_alternate_rotation: bool = true
+@export var visualize_tension: bool = false
+@export var snap_particles_enabled: bool = true
 
 # Internal runtime state
 var particles: Array[VerletParticle3D] = []
@@ -353,6 +355,7 @@ func _physics_process(delta: float) -> void:
 				var snapped: bool = c.solve()
 				if snapped:
 					rope_snapped.emit(c_idx)
+					_spawn_snap_fx((c.p1.position + c.p2.position) * 0.5)
 
 	# 5. Continuous World Collisions (Ray/Sphere queries)
 	if collision_enabled and is_inside_tree():
@@ -502,12 +505,25 @@ func _render_tube_mesh() -> void:
 		frames_n.append(cur_n)
 		frames_b.append(cur_b)
 
+	var colors: PackedColorArray = PackedColorArray()
+
 	# Generate cylinder rings
 	for r in range(rings):
 		var center = pts[r]
 		var n_vec = frames_n[r]
 		var b_vec = frames_b[r]
 		var v_coord: float = float(r) / float(rings - 1)
+
+		var ring_color = Color.WHITE
+		if visualize_tension:
+			var tension_ratio: float = 0.0
+			if not constraints.is_empty():
+				var c_idx = mini(r, constraints.size() - 1)
+				tension_ratio = clampf(constraints[c_idx].current_tension / maxf(break_tension_threshold, 1.0), 0.0, 1.0)
+			if tension_ratio > 0.5:
+				ring_color = Color(1.0, 0.85, 0.1).lerp(Color(1.0, 0.15, 0.1), (tension_ratio - 0.5) * 2.0)
+			else:
+				ring_color = Color(0.15, 0.9, 0.45).lerp(Color(1.0, 0.85, 0.1), tension_ratio * 2.0)
 
 		for s in range(radial_segments):
 			var theta: float = (float(s) / float(radial_segments)) * TAU
@@ -519,6 +535,8 @@ func _render_tube_mesh() -> void:
 			verts.append(vert_pos)
 			normals.append(circle_dir)
 			uvs.append(Vector2(float(s) / float(radial_segments), v_coord * (length / (rope_radius * 2.0))))
+			if visualize_tension:
+				colors.append(ring_color)
 
 	# Generate indices (connect rings with quads)
 	for r in range(rings - 1):
@@ -551,6 +569,8 @@ func _render_tube_mesh() -> void:
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	if visualize_tension and colors.size() == verts.size():
+		arrays[Mesh.ARRAY_COLOR] = colors
 	arrays[Mesh.ARRAY_INDEX] = indices
 
 	_dynamic_mesh.clear_surfaces()
@@ -620,8 +640,50 @@ func _render_debug_lines() -> void:
 
 func cut_at(segment_index: int) -> void:
 	if segment_index >= 0 and segment_index < constraints.size():
-		constraints[segment_index].is_active = false
-		rope_snapped.emit(segment_index)
+		var c = constraints[segment_index]
+		if c.is_active:
+			c.is_active = false
+			rope_snapped.emit(segment_index)
+			_spawn_snap_fx((c.p1.position + c.p2.position) * 0.5)
+
+
+func winch(delta_length: float) -> void:
+	if constraints.is_empty():
+		return
+	var delta_per_seg: float = delta_length / float(constraints.size())
+	for c in constraints:
+		c.rest_length = clampf(c.rest_length + delta_per_seg, 0.05, 50.0)
+	length = clampf(length + delta_length, 0.1, 500.0)
+
+
+func _spawn_snap_fx(pos: Vector3) -> void:
+	if not snap_particles_enabled or not is_inside_tree():
+		return
+	var p = CPUParticles3D.new()
+	p.name = "SnapSparks"
+	p.emitting = true
+	p.one_shot = true
+	p.explosiveness = 0.95
+	p.lifetime = 0.5
+	p.amount = 24
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 0.08
+	p.direction = Vector3.UP
+	p.spread = 180.0
+	p.gravity = Vector3(0, -9.8, 0)
+	p.initial_velocity_min = 2.5
+	p.initial_velocity_max = 6.0
+	p.color = Color(1.0, 0.75, 0.25)
+
+	var mesh = BoxMesh.new()
+	mesh.size = Vector3(0.04, 0.04, 0.04)
+	p.mesh = mesh
+
+	var parent_node = get_parent() if get_parent() else self
+	parent_node.add_child(p)
+	p.global_position = pos
+
+	get_tree().create_timer(0.7).timeout.connect(p.queue_free)
 
 
 func apply_impulse_to_particle(particle_index: int, impulse: Vector3) -> void:

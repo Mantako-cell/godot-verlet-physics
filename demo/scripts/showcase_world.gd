@@ -1,7 +1,11 @@
 #=============================================================================
 # ShowcaseWorld - Controller for Verlet Dynamics 3D Interactive Playground
+# Features: Real-time telemetry, tension heatmap toggle, wind modes,
+# dynamic physics ball projectile spawner, and procedural audio.
 #=============================================================================
 extends Node3D
+
+const VerletAudioSynth = preload("verlet_audio_synth.gd")
 
 @onready var camera: Camera3D = $FreeFlyCamera
 @onready var fps_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/FPSLabel
@@ -9,36 +13,51 @@ extends Node3D
 @onready var constraints_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/ConstraintsLabel
 @onready var status_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/StatusLabel
 @onready var wind_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/WindButton
+@onready var tension_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/TensionButton
+@onready var grapple_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/GrappleButton
 @onready var spawn_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/SpawnButton
 @onready var reset_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/ResetButton
 
-@export var wind_active: bool = true
+enum WindMode {
+	DIRECTIONAL,
+	WHIRLWIND_VORTEX,
+	OFF
+}
+
+var current_wind_mode: WindMode = WindMode.DIRECTIONAL
+var tension_heatmap_active: bool = false
 var _ball_count: int = 0
 
 
 func _ready() -> void:
 	if is_instance_valid(wind_btn):
-		wind_btn.pressed.connect(_toggle_wind)
+		wind_btn.pressed.connect(_cycle_wind_mode)
+	if is_instance_valid(tension_btn):
+		tension_btn.pressed.connect(_toggle_tension_heatmap)
+	if is_instance_valid(grapple_btn):
+		grapple_btn.pressed.connect(_trigger_grapple)
 	if is_instance_valid(spawn_btn):
 		spawn_btn.pressed.connect(_spawn_physics_ball)
 	if is_instance_valid(reset_btn):
 		reset_btn.pressed.connect(_reset_scene)
 
-	if is_instance_valid(camera):
-		camera.interaction_hint_updated.connect(_on_hint_updated)
+	if is_instance_valid(camera) and camera.has_signal("interaction_hint_updated"):
+		camera.connect("interaction_hint_updated", _on_hint_updated)
 
-	_update_wind_state()
+	_apply_wind_mode()
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
+	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_R:
 				_reset_scene()
 			KEY_B, KEY_SPACE:
 				_spawn_physics_ball()
 			KEY_W:
-				_toggle_wind()
+				_cycle_wind_mode()
+			KEY_T:
+				_toggle_tension_heatmap()
 
 
 func _process(_delta: float) -> void:
@@ -65,28 +84,80 @@ func _process(_delta: float) -> void:
 		constraints_label.text = "Active Constraints: %d" % total_c
 
 
-func _toggle_wind() -> void:
-	wind_active = not wind_active
-	_update_wind_state()
+func _cycle_wind_mode() -> void:
+	match current_wind_mode:
+		WindMode.DIRECTIONAL:
+			current_wind_mode = WindMode.WHIRLWIND_VORTEX
+		WindMode.WHIRLWIND_VORTEX:
+			current_wind_mode = WindMode.OFF
+		WindMode.OFF:
+			current_wind_mode = WindMode.DIRECTIONAL
+
+	_apply_wind_mode()
 
 
-func _update_wind_state() -> void:
-	var wind_vec = Vector3(6.0, 1.2, 0.0) if wind_active else Vector3.ZERO
+func _apply_wind_mode() -> void:
+	var wind_area = get_node_or_null("Station_Whirlwind/TornadoArea") as VerletWindArea3D
+
+	match current_wind_mode:
+		WindMode.DIRECTIONAL:
+			if is_instance_valid(wind_btn):
+				wind_btn.text = "Wind: GALE (6 m/s)"
+			for node in get_tree().get_nodes_in_group("verlet_physics"):
+				if node is VerletCloth3D:
+					node.wind_vector = Vector3(6.0, 1.2, 0.0)
+				elif node is VerletRope3D:
+					node.wind_vector = Vector3(3.0, 0.6, 0.0)
+			if is_instance_valid(wind_area):
+				wind_area.wind_strength = 0.0
+
+		WindMode.WHIRLWIND_VORTEX:
+			if is_instance_valid(wind_btn):
+				wind_btn.text = "Wind: TORNADO VORTEX"
+			for node in get_tree().get_nodes_in_group("verlet_physics"):
+				if node is VerletCloth3D:
+					node.wind_vector = Vector3(1.5, 2.0, 1.5)
+				elif node is VerletRope3D:
+					node.wind_vector = Vector3.ZERO
+			if is_instance_valid(wind_area):
+				wind_area.wind_strength = 18.0
+				wind_area.wind_type = VerletWindArea3D.WindType.VORTEX_SWIRL
+
+		WindMode.OFF:
+			if is_instance_valid(wind_btn):
+				wind_btn.text = "Wind: OFF"
+			for node in get_tree().get_nodes_in_group("verlet_physics"):
+				if node is VerletCloth3D:
+					node.wind_vector = Vector3.ZERO
+				elif node is VerletRope3D:
+					node.wind_vector = Vector3.ZERO
+			if is_instance_valid(wind_area):
+				wind_area.wind_strength = 0.0
+
+
+func _toggle_tension_heatmap() -> void:
+	tension_heatmap_active = not tension_heatmap_active
 	for node in get_tree().get_nodes_in_group("verlet_physics"):
-		if node is VerletCloth3D:
-			node.wind_vector = wind_vec
-		elif node is VerletRope3D:
-			node.wind_vector = wind_vec * 0.5
+		if node is VerletRope3D:
+			node.visualize_tension = tension_heatmap_active
+			if is_instance_valid(node._mesh_instance) and node._mesh_instance.material_override is StandardMaterial3D:
+				(node._mesh_instance.material_override as StandardMaterial3D).vertex_color_use_as_albedo = tension_heatmap_active
 
-	if is_instance_valid(wind_btn):
-		wind_btn.text = "Wind: %s" % ("ON [6.0 m/s]" if wind_active else "OFF")
+	if is_instance_valid(tension_btn):
+		tension_btn.text = "Tension Heatmap: %s" % ("ON" if tension_heatmap_active else "OFF")
+	_on_hint_updated("Tension Stress Heatmap %s" % ("ENABLED (Green->Red)" if tension_heatmap_active else "DISABLED"))
+
+
+func _trigger_grapple() -> void:
+	if is_instance_valid(camera) and camera.has_method("_toggle_grappling_hook"):
+		camera.call("_toggle_grappling_hook")
 
 
 func _spawn_physics_ball() -> void:
 	_ball_count += 1
 	var body = RigidBody3D.new()
 	body.name = "DynamicBall_%d" % _ball_count
-	body.mass = 2.5
+	body.mass = 3.0
 
 	var shape = CollisionShape3D.new()
 	var sphere = SphereShape3D.new()
@@ -102,22 +173,23 @@ func _spawn_physics_ball() -> void:
 
 	var mat = StandardMaterial3D.new()
 	mat.albedo_color = Color(randf_range(0.2, 1.0), randf_range(0.3, 1.0), randf_range(0.2, 1.0))
-	mat.metallic = 0.6
+	mat.metallic = 0.75
 	mat.roughness = 0.2
 	mesh_inst.material_override = mat
 	body.add_child(mesh_inst)
 
-	# Spawn slightly above the camera view or above the cloth/bridge
 	var cam_pos = camera.global_position if is_instance_valid(camera) else Vector3(0, 10, 0)
 	var cam_forward = -camera.global_transform.basis.z if is_instance_valid(camera) else Vector3.FORWARD
-	body.position = cam_pos + (cam_forward * 4.0) + Vector3.UP * 1.5
-	body.linear_velocity = (cam_forward * 10.0) + Vector3.UP * 2.0
+	body.position = cam_pos + (cam_forward * 3.5) + Vector3.UP * 0.8
+	body.linear_velocity = (cam_forward * 12.0) + Vector3.UP * 2.0
 
 	add_child(body)
-	_on_hint_updated("Fired Physics Sphere #%d!" % _ball_count)
+	VerletAudioSynth.play_sound(get_tree(), "thud", -4.0)
+	_on_hint_updated("Launched Physics Ball #%d!" % _ball_count)
 
 
 func _reset_scene() -> void:
+	VerletAudioSynth.play_sound(get_tree(), "cut")
 	get_tree().reload_current_scene()
 
 

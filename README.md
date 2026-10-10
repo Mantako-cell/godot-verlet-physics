@@ -15,16 +15,19 @@ A high-performance, pure GDScript 3D Verlet physics engine and node toolkit opti
   - `TUBE_MESH`: Real-time cylindrical 3D mesh with smooth normals and texture coordinates using parallel transport frames to avoid curve twisting.
   - `CHAIN_LINKS`: Real-time `MultiMeshInstance3D` rendering alternating interlocking chain links.
   - `DEBUG_LINE`: Lightweight immediate line renderer.
-- **Breakable Constraints**: Automatically snaps when tension exceeds `break_tension_threshold`, or cut dynamically via `cut_at(index)`.
+- **Breakable Constraints & Spark FX**: Automatically snaps when tension exceeds `break_tension_threshold` (spawning spark embers), or cut dynamically via `cut_at(index)`.
+- **Tension Stress Heatmap**: Toggleable real-time vertex color gradient (Green -> Yellow -> Blazing Red) showing stress distribution along the rope.
+- **Dynamic Winch API**: `winch(delta_length)` reels in or feeds out rope in real-time for elevators, cranes, and grappling hooks.
 - **Wind & Slack Control**: Dynamic wind turbulence and catenary curve sag.
 
 ### 🚩 2. `VerletCloth3D`
-- **2D Lattice in 3D Space**: Grid particle system supporting flags, banners, curtains, sails, and tarpaulins.
+- **2D Lattice in 3D Space**: Grid particle system supporting flags, banners, curtains, sails, and trampolines.
 - **Triple Constraint Architecture**:
   - Structural constraints (horizontal/vertical links)
   - Shear constraints (diagonal links preventing shear distortion)
   - Bending/Flexion constraints (skip-one links to control wrinkling)
 - **Aerodynamic Wind Lift & Drag**: Simulates aerodynamic normal forces across triangular faces, producing lifelike billows and flutter waves.
+- **High-Restitution Trampolines**: Can act as a springy elastic trampoline, launching colliding physics bodies into the air.
 - **Procedural ArrayMesh**: Dynamic vertex positions and smooth-shaded normal recomputation for lighting and reflections.
 - **Collision Draping**: Renders cloth draped over tables, spheres, and characters.
 - **Tearable**: Supports cutting and ripping cloth in real-time (`tear_at(x, y)`).
@@ -34,7 +37,13 @@ A high-performance, pure GDScript 3D Verlet physics engine and node toolkit opti
 - **Elastic Bouncing**: Squishes and deforms upon landing on surfaces, recovering shape elastically.
 
 ### 💨 4. `VerletWindArea3D`
-- **Directional & Turbulent Wind Zones**: Automatically exerts wind forces, gusts, and turbulence on any `VerletRope3D` or `VerletCloth3D` within its sphere of influence.
+- **Multi-Mode Wind Physics**:
+  - `DIRECTIONAL`: Uniform directional gale with turbulence noise.
+  - `RADIAL_OUTWARD`: Shockwave explosion breeze with distance falloff.
+  - `VORTEX_SWIRL`: Tornado whirlwind rotating ropes and cloth around an eye with updraft lift!
+
+### 🔊 5. `VerletAudioSynth`
+- **Zero-Dependency Procedural Audio**: Generates real-time sound effects (snap cracks, metallic slices, impact thuds, grapple releases) in pure GDScript without needing external `.wav` files.
 
 ---
 
@@ -58,10 +67,13 @@ Open the provided project directory (`godot-verlet-physics`) in Godot 4 and pres
 | **Right Mouse Click + Drag** | Look / Fly Camera |
 | **W / A / S / D + Q / E** | Navigate Camera in 3D space |
 | **Shift** | Boost Camera Speed |
-| **Left Mouse Click + Drag** | **Grab and pull any rope or cloth particle** |
-| **Middle Mouse Click** | **Cut rope segment or tear cloth** under cursor |
-| **Space or 'B'** | **Fire a heavy rolling physics sphere** into the scene |
-| **'W'** | Toggle wind turbine generator on / off |
+| **Left Mouse Click + Drag** | **Grab and pull any rope or cloth particle in 3D** |
+| **'G' or Grapple Button** | **Shoot Physics Grappling Hook** to any surface! |
+| **Scroll Wheel Up / Down** | **Winch In / Out** (reels in rope, pulling you forward) |
+| **'C' or Middle Mouse** | **Laser Slice rope or tear cloth** with spark burst FX |
+| **'T' or Tension Button** | **Toggle Tension Stress Heatmap** (Green -> Yellow -> Red) |
+| **'W' or Wind Button** | **Cycle Wind Mode** (Gale -> Tornado Vortex -> Off) |
+| **Space or 'B'** | **Fire rolling physics balls** |
 | **'R'** | Reset scene and physics simulations |
 
 ---
