@@ -6,6 +6,7 @@
 extends Node2D
 
 const VerletAudioSynth = preload("verlet_audio_synth.gd")
+const VerletRagdoll2DClass = preload("res://addons/verlet_dynamics_3d/nodes/verlet_ragdoll_2d.gd")
 
 @onready var fps_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/FPSLabel
 @onready var particles_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/ParticlesLabel
@@ -15,6 +16,7 @@ const VerletAudioSynth = preload("verlet_audio_synth.gd")
 @onready var wind_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/WindButton
 @onready var tension_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/TensionButton
 @onready var spawn_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/SpawnButton
+@onready var ragdoll_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/RagdollButton
 @onready var reset_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/ResetButton
 @onready var switch_3d_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/Switch3DButton
 
@@ -22,16 +24,19 @@ var _grabbed_particle: VerletParticle2D = null
 var wind_active: bool = true
 var tension_heatmap_active: bool = false
 var _ball_count: int = 0
+var _ragdoll_count: int = 0
 
 
 func _ready() -> void:
 	if is_instance_valid(wind_btn): wind_btn.pressed.connect(_toggle_wind)
 	if is_instance_valid(tension_btn): tension_btn.pressed.connect(_toggle_tension_heatmap)
 	if is_instance_valid(spawn_btn): spawn_btn.pressed.connect(_spawn_physics_ball_2d)
+	if is_instance_valid(ragdoll_btn): ragdoll_btn.pressed.connect(_spawn_ragdoll_2d)
 	if is_instance_valid(reset_btn): reset_btn.pressed.connect(_reset_scene)
 	if is_instance_valid(switch_3d_btn): switch_3d_btn.pressed.connect(_switch_to_3d)
 
 	_update_wind_state()
+
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -52,6 +57,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_reset_scene()
 			KEY_B, KEY_SPACE:
 				_spawn_physics_ball_2d()
+			KEY_Z:
+				_spawn_ragdoll_2d()
 			KEY_W:
 				_toggle_wind()
 			KEY_T:
@@ -85,6 +92,9 @@ func _process(_delta: float) -> void:
 		elif node is VerletSoftBody2D:
 			total_p += node.particles.size()
 			total_c += node.constraints.size()
+		elif node is VerletRagdoll2DClass:
+			total_p += node.particles.size()
+			total_c += node.constraints.size()
 
 	if is_instance_valid(particles_label):
 		particles_label.text = "Simulated 2D Particles: %d" % total_p
@@ -97,7 +107,7 @@ func _try_grab_particle_2d(click_pos: Vector2) -> void:
 	var min_dist: float = 30.0 # grab distance threshold in pixels
 
 	for node in get_tree().get_nodes_in_group("verlet_physics_2d"):
-		if node is VerletRope2D or node is VerletSoftBody2D:
+		if node is VerletRope2D or node is VerletSoftBody2D or node is VerletRagdoll2DClass:
 			for p in node.particles:
 				var d = p.position.distance_to(click_pos)
 				if d < min_dist:
@@ -117,6 +127,7 @@ func _try_grab_particle_2d(click_pos: Vector2) -> void:
 	if closest_p:
 		_grabbed_particle = closest_p
 		_set_status("Holding 2D Particle (Drag with mouse)")
+
 
 
 func _release_grabbed_particle_2d() -> void:
@@ -207,6 +218,37 @@ func _spawn_physics_ball_2d() -> void:
 	add_child(body)
 	VerletAudioSynth.play_sound(get_tree(), "thud", -4.0)
 	_set_status("Dropped 2D Physics Ball #%d!" % _ball_count)
+
+
+func _spawn_ragdoll_2d() -> void:
+	_ragdoll_count += 1
+	var ragdoll = VerletRagdoll2DClass.new()
+	ragdoll.name = "DynamicRagdoll2D_%d" % _ragdoll_count
+	ragdoll.character_scale = randf_range(0.85, 1.2)
+
+	# Varied stylized outfit color schemes
+	var r = randf()
+	if r < 0.33:
+		ragdoll.shirt_color = Color(0.9, 0.3, 0.25)
+		ragdoll.pants_color = Color(0.15, 0.2, 0.3)
+	elif r < 0.66:
+		ragdoll.shirt_color = Color(0.2, 0.75, 0.45)
+		ragdoll.pants_color = Color(0.25, 0.25, 0.28)
+	else:
+		ragdoll.shirt_color = Color(0.95, 0.7, 0.15)
+		ragdoll.pants_color = Color(0.4, 0.2, 0.15)
+
+	var mouse_pos = get_viewport().get_mouse_position()
+	ragdoll.position = mouse_pos
+	ragdoll.add_to_group("verlet_physics_2d")
+	add_child(ragdoll)
+
+	# Impart playful initial velocity & spin
+	var tumble_vel = Vector2(randf_range(-140.0, 140.0), randf_range(-80.0, 20.0))
+	ragdoll.apply_velocity(tumble_vel)
+
+	VerletAudioSynth.play_sound(get_tree(), "thud", -2.0)
+	_set_status("Dropped 2D Ragdoll #%d at (%d, %d)!" % [_ragdoll_count, int(mouse_pos.x), int(mouse_pos.y)])
 
 
 func _switch_to_3d() -> void:

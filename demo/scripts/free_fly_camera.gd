@@ -71,7 +71,7 @@ func _process(delta: float) -> void:
 	if Input.is_key_pressed(KEY_S): input_vec += transform.basis.z
 	if Input.is_key_pressed(KEY_A): input_vec += -transform.basis.x
 	if Input.is_key_pressed(KEY_D): input_vec += transform.basis.x
-	if Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_SPACE): input_vec += Vector3.UP
+	if Input.is_key_pressed(KEY_E): input_vec += Vector3.UP
 	if Input.is_key_pressed(KEY_Q): input_vec += Vector3.DOWN
 
 	var speed = boost_speed if Input.is_key_pressed(KEY_SHIFT) else move_speed
@@ -194,6 +194,17 @@ func _try_grab_particle(mouse_pos: Vector2) -> void:
 							min_dist = d
 							closest_p = p
 							_grabbed_distance = proj
+		elif node is VerletSoftVolume3D:
+			for p in node.particles:
+				var to_p = p.position - ray_origin
+				var proj = to_p.dot(ray_dir)
+				if proj > 0.5:
+					var closest_on_ray = ray_origin + (ray_dir * proj)
+					var d = p.position.distance_to(closest_on_ray)
+					if d < min_dist:
+						min_dist = d
+						closest_p = p
+						_grabbed_distance = proj
 
 	if closest_p:
 		_grabbed_particle = closest_p

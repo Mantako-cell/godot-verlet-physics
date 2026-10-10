@@ -1,6 +1,10 @@
 ; Engine configuration file.
 ; It's best edited using the editor UI and not directly,
-; but you can also make subtle tweaks here.
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -19,6 +23,4 @@ enabled=PackedStringArray("res://addons/verlet_dynamics_3d/plugin.cfg")
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-anti_aliasing/quality/msaa_3d=0
-anti_aliasing/quality/screen_space_aa=0
 environment/defaults/default_clear_color=Color(0.12, 0.14, 0.18, 1)

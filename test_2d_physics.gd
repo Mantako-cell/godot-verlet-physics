@@ -54,8 +54,24 @@ func _init() -> void:
 	cloth.tear_at(2, 2)
 	print("SUCCESS: VerletCloth2D passed!")
 
-	# 4. Test 2D Scene Execution
-	print("\n[Test 4] Testing 2D Showcase Scene Execution...")
+	# 4. Test VerletRagdoll2D
+	print("\n[Test 4] Testing VerletRagdoll2D (Articulated Humanoid)...")
+	var ragdoll2d = VerletRagdoll2D.new()
+	ragdoll2d.character_scale = 1.0
+	ragdoll2d._ready()
+
+	print("Ragdoll 2D particles: %d, constraints: %d" % [ragdoll2d.particles.size(), ragdoll2d.constraints.size()])
+	assert(ragdoll2d.particles.size() == 16, "2D Ragdoll should have 16 skeletal joint particles")
+	assert(ragdoll2d.constraints.size() >= 20, "2D Ragdoll should have bones and anti-inversion struts")
+
+	for i in range(10):
+		ragdoll2d._physics_process(0.016)
+
+	ragdoll2d.apply_impulse(Vector2(0, -100.0))
+	print("SUCCESS: VerletRagdoll2D passed!")
+
+	# 5. Test 2D Scene Execution
+	print("\n[Test 5] Testing 2D Showcase Scene Execution...")
 	change_scene_to_file("res://demo/scenes/showcase_world_2d.tscn")
 	var timer = create_timer(1.2)
 	timer.timeout.connect(func():
@@ -64,3 +80,4 @@ func _init() -> void:
 		print("=======================================================")
 		quit(0)
 	)
+

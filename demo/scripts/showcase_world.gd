@@ -35,6 +35,11 @@ var _ball_count: int = 0
 
 
 func _ready() -> void:
+	# Ensure HUD buttons do not retain keyboard focus after clicks
+	for btn in [wind_btn, tension_btn, grapple_btn, spawn_btn, reset_btn, quality_btn, switch_2d_btn]:
+		if is_instance_valid(btn):
+			btn.focus_mode = Control.FOCUS_NONE
+
 	if is_instance_valid(wind_btn):
 		wind_btn.pressed.connect(_cycle_wind_mode)
 	if is_instance_valid(tension_btn):

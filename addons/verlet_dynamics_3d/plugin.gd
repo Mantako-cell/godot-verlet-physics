@@ -19,6 +19,7 @@ func _enter_tree() -> void:
 	var cloth_icon_2d = load("res://addons/verlet_dynamics_3d/icons/icon_cloth_2d.svg") if ResourceLoader.exists("res://addons/verlet_dynamics_3d/icons/icon_cloth_2d.svg") else null
 	var soft_icon_2d = load("res://addons/verlet_dynamics_3d/icons/icon_softbody_2d.svg") if ResourceLoader.exists("res://addons/verlet_dynamics_3d/icons/icon_softbody_2d.svg") else null
 	var wind_icon_2d = load("res://addons/verlet_dynamics_3d/icons/icon_wind_2d.svg") if ResourceLoader.exists("res://addons/verlet_dynamics_3d/icons/icon_wind_2d.svg") else null
+	var ragdoll_icon_2d = load("res://addons/verlet_dynamics_3d/icons/icon_ragdoll_2d.svg") if ResourceLoader.exists("res://addons/verlet_dynamics_3d/icons/icon_ragdoll_2d.svg") else null
 
 	# --- 3D Custom Nodes ---
 	add_custom_type("VerletRope3D", "Node3D", preload("res://addons/verlet_dynamics_3d/nodes/verlet_rope_3d.gd"), rope_icon_3d)
@@ -31,6 +32,7 @@ func _enter_tree() -> void:
 	add_custom_type("VerletCloth2D", "Node2D", preload("res://addons/verlet_dynamics_3d/nodes/verlet_cloth_2d.gd"), cloth_icon_2d)
 	add_custom_type("VerletSoftBody2D", "Node2D", preload("res://addons/verlet_dynamics_3d/nodes/verlet_soft_body_2d.gd"), soft_icon_2d)
 	add_custom_type("VerletWindArea2D", "Area2D", preload("res://addons/verlet_dynamics_3d/nodes/verlet_wind_area_2d.gd"), wind_icon_2d)
+	add_custom_type("VerletRagdoll2D", "Node2D", preload("res://addons/verlet_dynamics_3d/nodes/verlet_ragdoll_2d.gd"), ragdoll_icon_2d)
 
 	print("[%s] 2D & 3D Physics Suite enabled successfully in Godot Editor." % PLUGIN_NAME)
 
@@ -45,5 +47,6 @@ func _exit_tree() -> void:
 	remove_custom_type("VerletCloth2D")
 	remove_custom_type("VerletSoftBody2D")
 	remove_custom_type("VerletWindArea2D")
+	remove_custom_type("VerletRagdoll2D")
 
 	print("[%s] Plugin disabled." % PLUGIN_NAME)

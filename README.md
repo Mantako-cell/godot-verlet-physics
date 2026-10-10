@@ -1,6 +1,6 @@
 # Verlet Dynamics for Godot 4.7+ (2D & 3D Suite)
 
-Version: 1.2.0
+Version: 1.3.0
 
 A high-performance, pure GDScript 2D & 3D Verlet physics engine and node toolkit designed specifically for Godot 4.7+ (and compatible with Godot 4.x). Instant drop-in integration without C++ compilation, GDExtension binaries, external native dependencies, or .NET requirements.
 
@@ -10,7 +10,7 @@ A high-performance, pure GDScript 2D & 3D Verlet physics engine and node toolkit
 
 Verlet Dynamics provides first-class nodes with native Godot Editor integration, procedural rendering, continuous collision detection, and bidirectional physics coupling for both 2D and 3D projects:
 
-- **2D Games:** Platformer rope swinging, suspension bridges, squishy slime monsters, wind-blown tapestries, and chains.
+- **2D Games:** Platformer rope swinging, suspension bridges, squishy slime monsters, wind-blown tapestries, chains, and interactive character ragdolls.
 - **3D Games:** Grappling hooks, cranes, tearable banners, high-restitution trampolines, deformable volumes, and tornado vortex winds.
 
 ---
@@ -43,7 +43,14 @@ Verlet Dynamics provides first-class nodes with native Godot Editor integration,
 - **Procedural Gloss Rendering:** Smooth filled polygon body with customizable color, border outlines, and stylized specular highlights.
 - **Interactive Grabbing:** Click and drag any point on the slime to stretch it like elastic putty.
 
-### 4. VerletWindArea2D
+### 4. VerletRagdoll2D
+- **Articulated Humanoid Skeleton:** 16 skeletal joint particles covering head, neck, torso, pelvis, shoulders, elbows, hands, hips, knees, and feet with realistic mass distribution.
+- **Anti-Inversion Struts & Cross-Bracing:** Jakobsen-style distance constraints prevent unnatural joint inversions and limb hyper-extensions.
+- **Continuous 2D Obstacle Collisions:** Raycast collision queries prevent limbs from penetrating floors, walls, and static platforms.
+- **Procedural Capsule Limb Rendering:** Renders outlined limb capsules, clothes, skin tones, shoes, and facial visor features directly via `_draw()` without sprite sheet requirements.
+- **Interactive Mouse Grabbing:** Click and drag any limb joint to toss, swing, or pin characters in real-time.
+
+### 5. VerletWindArea2D
 - **Area2D Wind Physics:**
   - `DIRECTIONAL`: Sustained directional airflow with configurable gust frequency.
   - `RADIAL_OUTWARD`: Shockwave blast originating from an explosion center.
@@ -85,12 +92,12 @@ Verlet Dynamics provides first-class nodes with native Godot Editor integration,
 2. In Godot, go to **Project -> Project Settings -> Plugins**.
 3. Enable **Verlet Dynamics (2D & 3D)**.
 4. All custom nodes are now available in the **Create New Node** dialog with custom icons:
-   - **2D Nodes:** `VerletRope2D`, `VerletCloth2D`, `VerletSoftBody2D`, `VerletWindArea2D`
+   - **2D Nodes:** `VerletRope2D`, `VerletCloth2D`, `VerletSoftBody2D`, `VerletRagdoll2D`, `VerletWindArea2D`
    - **3D Nodes:** `VerletRope3D`, `VerletCloth3D`, `VerletSoftVolume3D`, `VerletWindArea3D`
 
 ### Method 2: Explore the Interactive Showcases
 Open the project directory in Godot 4 and run either showcase:
-- **2D Showcase:** `res://demo/scenes/showcase_world_2d.tscn` (Suspension bridge, wrecking ball, jelly slime, fluttering banner, crate stack, particle grabber & cutter).
+- **2D Showcase:** `res://demo/scenes/showcase_world_2d.tscn` (Suspension bridge, wrecking ball, jelly slime, fluttering banner, crate stack, platform ragdoll station, particle grabber & cutter).
 - **3D Showcase:** `res://demo/scenes/showcase_world.tscn` (Park with grappling hook gun, crane, trampoline, tornado vortex, and wrecking ball).
 - Use the HUD buttons (`[Switch to 2D Showcase]` / `[Switch to 3D Showcase]`) or keys `2` / `3` to jump between them.
 
@@ -102,7 +109,8 @@ Open the project directory in Godot 4 and run either showcase:
 
 | Input | Action |
 |---|---|
-| Left Click + Drag | Grab and pull any 2D particle (stretch ropes, pull cloth, squish slimes) |
+| Left Click + Drag | Grab and pull any 2D particle (stretch ropes, pull cloth, squish slimes, swing ragdoll limbs) |
+| 'Z' or Ragdoll Button | Drop tumbling 2D humanoid ragdoll at cursor |
 | Right Click + Drag | Laser Slice / Cut tool (slices ropes and tears cloth under the cursor) |
 | Space or 'B' | Spawn 2D Wrecking Ball (crashes into crate stacks and tests ropes) |
 | 'T' | Toggle Tension Stress Heatmap (Green -> Yellow -> Red) |
@@ -115,8 +123,8 @@ Open the project directory in Godot 4 and run either showcase:
 | Input | Action |
 |---|---|
 | Right Mouse Click + Drag | Look / Fly Camera |
-| W / A / S / D + Q / E | Navigate Camera in 3D space (Shift for speed boost) |
-| Left Mouse Click + Drag | Grab and pull any 3D particle in real space |
+| W / A / S / D + Q / E | Navigate Camera in 3D space (Shift for speed boost, E=Up, Q=Down) |
+| Left Mouse Click + Drag | Grab and pull any 3D particle in real space (ropes, cloth, soft volume) |
 | 'G' or Grapple Button | Shoot Physics Grappling Hook to any surface |
 | Scroll Wheel Up / Down | Winch In / Out (reels in rope, pulling you forward) |
 | 'C' or Middle Mouse | Laser Slice rope or tear cloth with spark burst FX |
@@ -176,6 +184,17 @@ banner.spacing = Vector2(16.0, 16.0)
 banner.pin_top_edge = true
 banner.wind_force = Vector2(200.0, -30.0)
 add_child(banner)
+```
+
+### Spawning an Articulated 2D Ragdoll:
+```gdscript
+var ragdoll = VerletRagdoll2D.new()
+ragdoll.position = Vector2(400, 200)
+ragdoll.character_scale = 1.0
+ragdoll.shirt_color = Color(0.2, 0.6, 0.9)
+ragdoll.pants_color = Color(0.18, 0.22, 0.32)
+ragdoll.apply_velocity(Vector2(120.0, -40.0)) # Initial toss velocity
+add_child(ragdoll)
 ```
 
 ### Cutting Ropes or Tearing Cloth:

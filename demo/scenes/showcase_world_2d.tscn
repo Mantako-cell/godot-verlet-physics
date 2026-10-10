@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_rope_2d.gd" id="2_rope"]
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_cloth_2d.gd" id="3_cloth"]
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_soft_body_2d.gd" id="4_soft"]
+[ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_ragdoll_2d.gd" id="5_ragdoll"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
 size = Vector2(1200, 40)
@@ -193,6 +194,29 @@ attach_end_to = NodePath("../ChainAnchorB")
 render_mode = 1
 rope_width = 8.0
 
+[node name="Station_Ragdoll" type="Node2D" parent="."]
+position = Vector2(800, 360)
+
+[node name="Platform" type="StaticBody2D" parent="Station_Ragdoll"]
+position = Vector2(0, 100)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Station_Ragdoll/Platform"]
+shape = SubResource("RectangleShape2D_ramp")
+
+[node name="ColorRect" type="ColorRect" parent="Station_Ragdoll/Platform"]
+offset_left = -110.0
+offset_top = -10.0
+offset_right = 110.0
+offset_bottom = 10.0
+color = Color(0.28, 0.32, 0.4, 1)
+
+[node name="InteractiveRagdoll2D" type="Node2D" parent="Station_Ragdoll" groups=["verlet_physics_2d"]]
+position = Vector2(0, 20)
+script = ExtResource("5_ragdoll")
+character_scale = 1.0
+shirt_color = Color(0.2, 0.6, 0.9, 1)
+pants_color = Color(0.18, 0.22, 0.32, 1)
+
 [node name="HUD" type="CanvasLayer" parent="."]
 
 [node name="MarginContainer" type="MarginContainer" parent="HUD"]
@@ -259,6 +283,11 @@ custom_minimum_size = Vector2(170, 36)
 layout_mode = 2
 text = "Drop 2D Ball (B/Space)"
 
+[node name="RagdollButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(170, 36)
+layout_mode = 2
+text = "Drop Ragdoll (Z)"
+
 [node name="ResetButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
 custom_minimum_size = Vector2(120, 36)
 layout_mode = 2
@@ -277,8 +306,10 @@ size_flags_vertical = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(0.2, 0.25, 0.35, 1)
 text = "2D Physics Controls:
-• Left-Mouse Click & Drag: Grab and pull any rope, slime, or banner particle in real-time
-• Right-Mouse Click or 'C': Cut rope segment or tear banner under cursor
+• Left-Mouse Click & Drag: Grab and pull any ragdoll limb, rope, slime, or banner
+• 'Z': Drop ragdoll character at cursor (interactive tumbling & collisions)
 • Space or 'B': Drop rolling 2D physics ball at cursor
+• Right-Mouse Click or 'C': Cut rope segment or tear banner under cursor
 • 'W': Toggle wind blower | 'T': Toggle Tension stress heatmap
 • 'R': Reset scene | Click 'Switch to 3D Playground' to return to 3D mode"
+
