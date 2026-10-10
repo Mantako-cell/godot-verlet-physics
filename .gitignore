@@ -1,0 +1,25 @@
+# Godot 4+ specific ignores
+.godot/
+*.translation
+
+# Mono/C# specifics (if ever used)
+.mono/
+[Gg]odot/
+*.csproj
+*.sln
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Editor and IDE configurations
+.vscode/
+.idea/
+
+# Export builds
+builds/
+exports/
+*.apk
+*.aab
+*.exe
+*.pck

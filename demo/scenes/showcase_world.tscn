@@ -1,0 +1,288 @@
+[gd_scene load_steps=21 format=3 uid="uid://c8yj7x4klm6op"]
+
+[ext_resource type="Script" path="res://demo/scripts/showcase_world.gd" id="1_world"]
+[ext_resource type="Script" path="res://demo/scripts/free_fly_camera.gd" id="2_cam"]
+[ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_rope_3d.gd" id="3_rope"]
+[ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_cloth_3d.gd" id="4_cloth"]
+[ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_soft_volume_3d.gd" id="5_soft"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
+sky_top_color = Color(0.18, 0.24, 0.35, 1)
+sky_horizon_color = Color(0.55, 0.62, 0.7, 1)
+ground_bottom_color = Color(0.12, 0.14, 0.18, 1)
+ground_horizon_color = Color(0.35, 0.38, 0.42, 1)
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("ProceduralSkyMaterial_1")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_source = 3
+ambient_light_color = Color(0.6, 0.65, 0.75, 1)
+ambient_light_energy = 0.8
+tonemap_mode = 3
+glow_enabled = true
+glow_bloom = 0.15
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(60, 1, 60)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.14, 0.16, 0.2, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(60, 1, 60)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ball"]
+radius = 0.65
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ball"]
+albedo_color = Color(0.85, 0.2, 0.2, 1)
+metallic = 0.8
+roughness = 0.2
+
+[sub_resource type="SphereMesh" id="SphereMesh_ball"]
+material = SubResource("StandardMaterial3D_ball")
+radius = 0.65
+height = 1.3
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_crate"]
+size = Vector3(0.8, 0.8, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_crate"]
+albedo_color = Color(0.72, 0.52, 0.32, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_crate"]
+material = SubResource("StandardMaterial3D_crate")
+size = Vector3(0.8, 0.8, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cloth"]
+cull_mode = 2
+albedo_color = Color(0.2, 0.55, 0.95, 1)
+roughness = 0.5
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ramp"]
+size = Vector3(4, 0.4, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ramp"]
+size = Vector3(4, 0.4, 4)
+
+[node name="ShowcaseWorld" type="Node3D"]
+script = ExtResource("1_world")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 12, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="FreeFlyCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.955336, 0.29552, 0, -0.29552, 0.955336, 0, 4.2, 8.5)
+script = ExtResource("2_cam")
+
+[node name="Station_WreckingBall" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4)
+
+[node name="GallowsAnchor" type="Node3D" parent="Station_WreckingBall"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.5, 0)
+
+[node name="WreckingBallRope" type="Node3D" parent="Station_WreckingBall" groups=["verlet_physics"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.5, 0)
+script = ExtResource("3_rope")
+length = 4.5
+segment_count = 14
+pin_start = true
+pin_end = true
+attach_end_to = NodePath("../HeavyBallBody")
+rope_radius = 0.045
+solver_iterations = 14
+
+[node name="HeavyBallBody" type="RigidBody3D" parent="Station_WreckingBall"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+mass = 15.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Station_WreckingBall/HeavyBallBody"]
+shape = SubResource("SphereShape3D_ball")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Station_WreckingBall/HeavyBallBody"]
+mesh = SubResource("SphereMesh_ball")
+
+[node name="CrateTower" type="Node3D" parent="Station_WreckingBall"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.8)
+
+[node name="Crate1" type="RigidBody3D" parent="Station_WreckingBall/CrateTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45, 0.4, 0)
+mass = 1.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Station_WreckingBall/CrateTower/Crate1"]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Station_WreckingBall/CrateTower/Crate1"]
+mesh = SubResource("BoxMesh_crate")
+
+[node name="Crate2" type="RigidBody3D" parent="Station_WreckingBall/CrateTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0.4, 0)
+mass = 1.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Station_WreckingBall/CrateTower/Crate2"]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Station_WreckingBall/CrateTower/Crate2"]
+mesh = SubResource("BoxMesh_crate")
+
+[node name="Crate3" type="RigidBody3D" parent="Station_WreckingBall/CrateTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+mass = 1.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Station_WreckingBall/CrateTower/Crate3"]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Station_WreckingBall/CrateTower/Crate3"]
+mesh = SubResource("BoxMesh_crate")
+
+[node name="Station_Cloth" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.0, 0, -1.0)
+
+[node name="FlutteringCloth" type="Node3D" parent="Station_Cloth" groups=["verlet_physics"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.0, 0)
+script = ExtResource("4_cloth")
+resolution = Vector2i(14, 14)
+cloth_size = Vector2(3.0, 2.5)
+wind_vector = Vector3(6.0, 1.0, 0.0)
+material = SubResource("StandardMaterial3D_cloth")
+
+[node name="Station_Chain" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, -2.0)
+
+[node name="ChainAnchorA" type="Node3D" parent="Station_Chain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0, 4.5, 0)
+
+[node name="ChainAnchorB" type="Node3D" parent="Station_Chain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.0, 4.5, 0)
+
+[node name="IronChain" type="Node3D" parent="Station_Chain" groups=["verlet_physics"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0, 4.5, 0)
+script = ExtResource("3_rope")
+length = 4.8
+segment_count = 14
+slack_ratio = 1.2
+pin_start = true
+pin_end = true
+attach_end_to = NodePath("../ChainAnchorB")
+render_mode = 1
+solver_iterations = 12
+
+[node name="Station_SoftVolume" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0, 2.5)
+
+[node name="Ramp" type="StaticBody3D" parent="Station_SoftVolume"]
+transform = Transform3D(0.92388, 0.382683, 0, -0.382683, 0.92388, 0, 0, 0, 1, 0, 0.8, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Station_SoftVolume/Ramp"]
+shape = SubResource("BoxShape3D_ramp")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Station_SoftVolume/Ramp"]
+mesh = SubResource("BoxMesh_ramp")
+
+[node name="BouncyJellyCube" type="Node3D" parent="Station_SoftVolume" groups=["verlet_physics"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 3.2, 0)
+script = ExtResource("5_soft")
+size = Vector3(1.1, 1.1, 1.1)
+elasticity_stiffness = 0.88
+internal_brace_stiffness = 0.75
+bounce_factor = 0.65
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Verlet Dynamics 3D - Physics Playground"
+
+[node name="PanelStats" type="PanelContainer" parent="HUD/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="VBox" type="VBoxContainer" parent="HUD/MarginContainer/VBoxContainer/PanelStats"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="FPSLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+layout_mode = 2
+text = "FPS: 60"
+
+[node name="ParticlesLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+layout_mode = 2
+text = "Simulated Particles: 0"
+
+[node name="ConstraintsLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+layout_mode = 2
+text = "Active Constraints: 0"
+
+[node name="StatusLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+layout_mode = 2
+text = "Interaction: Ready"
+
+[node name="HBoxButtons" type="HBoxContainer" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WindButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+text = "Wind: ON [6.0 m/s]"
+
+[node name="SpawnButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+text = "Drop Physics Ball (B)"
+
+[node name="ResetButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+text = "Reset Scene (R)"
+
+[node name="Spacer" type="Control" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Instructions" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.8)
+text = "Controls:
+• Right-Mouse Drag: Orbit / Fly Camera
+• Left-Mouse Click & Drag: Grab and pull rope/cloth particles in real-time
+• Middle-Mouse Click: Snip rope or tear cloth under cursor
+• WASD / Space / Q: Fly camera navigation
+• 'B' or Space: Fire rolling physics sphere
+• 'W': Toggle wind gust generator | 'R': Reset simulation"

@@ -1,0 +1,65 @@
+#=============================================================================
+# VerletConstraint3D - Distance constraint between two particles
+# Part of VerletDynamics3D for Godot 4.x
+#=============================================================================
+class_name VerletConstraint3D
+extends RefCounted
+
+var p1: VerletParticle3D
+var p2: VerletParticle3D
+var rest_length: float = 1.0
+var stiffness: float = 1.0 # 0.0 to 1.0
+var is_active: bool = true
+var can_break: bool = false
+var break_tension_limit: float = 1000.0
+
+var current_tension: float = 0.0
+var current_elongation: float = 0.0
+
+
+func _init(
+	particle_a: VerletParticle3D,
+	particle_b: VerletParticle3D,
+	custom_length: float = -1.0,
+	p_stiffness: float = 1.0
+) -> void:
+	p1 = particle_a
+	p2 = particle_b
+	stiffness = clampf(p_stiffness, 0.01, 1.0)
+	if custom_length > 0.0:
+		rest_length = custom_length
+	else:
+		rest_length = maxf(particle_a.position.distance_to(particle_b.position), 0.001)
+
+
+func solve() -> bool:
+	if not is_active or p1 == null or p2 == null:
+		return false
+
+	var delta: Vector3 = p1.position - p2.position
+	var current_distance: float = delta.length()
+	if current_distance < 0.00001:
+		return false
+
+	var diff: float = current_distance - rest_length
+	current_elongation = diff
+	current_tension = absf(diff) * stiffness * 100.0
+
+	# Check snapping
+	if can_break and current_tension > break_tension_limit:
+		is_active = false
+		return true # Snapped
+
+	var total_inv_mass: float = p1.inv_mass + p2.inv_mass
+	if total_inv_mass <= 0.000001:
+		return false
+
+	var normal: Vector3 = delta / current_distance
+	var correction: Vector3 = normal * diff * stiffness
+
+	if not p1.is_pinned:
+		p1.position -= correction * (p1.inv_mass / total_inv_mass)
+	if not p2.is_pinned:
+		p2.position += correction * (p2.inv_mass / total_inv_mass)
+
+	return false
