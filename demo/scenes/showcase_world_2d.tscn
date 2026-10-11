@@ -1,11 +1,11 @@
-[gd_scene load_steps=13 format=3 uid="uid://d3yq8j7v6a12c"]
+[gd_scene load_steps=12 format=3 uid="uid://d3yq8j7v6a12c"]
 
 [ext_resource type="Script" path="res://demo/scripts/showcase_world_2d.gd" id="1_world"]
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_rope_2d.gd" id="2_rope"]
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_cloth_2d.gd" id="3_cloth"]
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_soft_body_2d.gd" id="4_soft"]
 [ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_ragdoll_2d.gd" id="5_ragdoll"]
-[ext_resource type="Script" path="res://addons/verlet_dynamics_3d/nodes/verlet_terrain_2d.gd" id="6_terrain"]
+
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
 size = Vector2(1200, 40)
@@ -76,7 +76,7 @@ color = Color(0.75, 0.2, 0.25, 1)
 polygon = PackedVector2Array(32, 0, 29, 12, 22, 22, 12, 29, 0, 32, -12, 29, -22, 22, -29, 12, -32, 0, -29, -12, -22, -22, -12, -29, 0, -32, 12, -29, 22, -22, 29, -12)
 
 [node name="Crates" type="Node2D" parent="Station_WreckingBall"]
-position = Vector2(90, 410)
+position = Vector2(90, 480)
 
 [node name="Crate1" type="RigidBody2D" parent="Station_WreckingBall/Crates" groups=["physics_bodies_2d"]]
 position = Vector2(-20, 10)
@@ -218,15 +218,6 @@ character_scale = 1.0
 shirt_color = Color(0.2, 0.6, 0.9, 1)
 pants_color = Color(0.18, 0.22, 0.32, 1)
 
-[node name="Station_Terrain" type="Node2D" parent="."]
-position = Vector2(0, 530)
-
-[node name="DynamicTerrain2D" type="Node2D" parent="Station_Terrain" groups=["verlet_physics_2d", "verlet_terrain"]]
-script = ExtResource("6_terrain")
-terrain_width = 1160.0
-column_count = 80
-basin_depth = 110.0
-
 [node name="HUD" type="CanvasLayer" parent="."]
 
 [node name="MarginContainer" type="MarginContainer" parent="HUD"]
@@ -278,16 +269,6 @@ text = "Interaction: Ready"
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="TerrainModeButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(160, 36)
-layout_mode = 2
-text = "Terrain: EARTH (M)"
-
-[node name="SmoothTerrainButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(130, 36)
-layout_mode = 2
-text = "Smooth (X)"
-
 [node name="WindButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
 custom_minimum_size = Vector2(160, 36)
 layout_mode = 2
@@ -327,10 +308,8 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.2, 0.25, 0.35, 1)
 text = "2D Physics Controls:
 • Left-Mouse Click & Drag: Grab and pull any ragdoll limb, rope, slime, or banner
-• Click & Drag on Terrain (Y > 500): Indent/crater soil or generate radiating wave ripples
-• 'M' or Terrain Button: Toggle Terrain Mode (Deformable Earth / Fluid Basin)
-• 'X': Smooth / level terrain | 'Z': Drop ragdoll | Space or 'B': Drop rolling ball
 • Right-Mouse Click or 'C': Cut rope segment or tear banner under cursor
+• Space or 'B': Drop rolling ball | 'Z': Drop 2D ragdoll
 • 'W': Toggle wind blower | 'T': Toggle Tension stress heatmap
 • 'R': Reset scene | Click 'Switch to 3D Playground' to return to 3D mode"
 
