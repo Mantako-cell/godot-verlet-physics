@@ -1,6 +1,6 @@
 # Verlet Dynamics for Godot 4.7+ (2D & 3D Suite)
 
-Version: 1.3.0
+Version: 1.4.0
 
 A high-performance, pure GDScript 2D & 3D Verlet physics engine and node toolkit designed specifically for Godot 4.7+ (and compatible with Godot 4.x). Instant drop-in integration without C++ compilation, GDExtension binaries, external native dependencies, or .NET requirements.
 
@@ -10,7 +10,7 @@ A high-performance, pure GDScript 2D & 3D Verlet physics engine and node toolkit
 
 Verlet Dynamics provides first-class nodes with native Godot Editor integration, procedural rendering, continuous collision detection, and bidirectional physics coupling for both 2D and 3D projects:
 
-- **2D Games:** Platformer rope swinging, suspension bridges, squishy slime monsters, wind-blown tapestries, chains, and interactive character ragdolls.
+- **2D Games:** Platformer rope swinging, suspension bridges, squishy slime monsters, wind-blown tapestries, chains, deformable terrain & fluid basins, and interactive character ragdolls.
 - **3D Games:** Grappling hooks, cranes, tearable banners, high-restitution trampolines, deformable volumes, and tornado vortex winds.
 
 ---
@@ -50,7 +50,15 @@ Verlet Dynamics provides first-class nodes with native Godot Editor integration,
 - **Procedural Capsule Limb Rendering:** Renders outlined limb capsules, clothes, skin tones, shoes, and facial visor features directly via `_draw()` without sprite sheet requirements.
 - **Interactive Mouse Grabbing:** Click and drag any limb joint to toss, swing, or pin characters in real-time.
 
-### 5. VerletWindArea2D
+### 5. VerletTerrain2D
+- **Dual Physics Modes:**
+  - `DEFORMABLE_EARTH`: Plastic soil compaction and persistent cratering under heavy impacts (e.g. falling wrecking balls, crates, ragdolls) with real-time excavation/mounding mouse sculpting.
+  - `FLUID_BASIN`: 2.5D heightfield wave propagation with spring-coupled column tension, viscous drag, and bidirectional buoyancy pushing floating objects upward.
+- **Continuous Collision Regeneration:** Dynamically updates an internal `CollisionPolygon2D` so Godot built-in 2D physics bodies naturally roll along craters and settle into excavated trenches.
+- **Procedural Multi-Layer Rendering:** Vector-drawn layered earth strata, grassy blade tufts, glowing water crest highlights, and depth gradients via `_draw()`.
+- **Interactive Sculpt API:** `indent(world_x, depth)`, `raise_mound(world_x, height)`, `splash(world_x, force)`, and `smooth_terrain()`.
+
+### 6. VerletWindArea2D
 - **Area2D Wind Physics:**
   - `DIRECTIONAL`: Sustained directional airflow with configurable gust frequency.
   - `RADIAL_OUTWARD`: Shockwave blast originating from an explosion center.
@@ -92,12 +100,12 @@ Verlet Dynamics provides first-class nodes with native Godot Editor integration,
 2. In Godot, go to **Project -> Project Settings -> Plugins**.
 3. Enable **Verlet Dynamics (2D & 3D)**.
 4. All custom nodes are now available in the **Create New Node** dialog with custom icons:
-   - **2D Nodes:** `VerletRope2D`, `VerletCloth2D`, `VerletSoftBody2D`, `VerletRagdoll2D`, `VerletWindArea2D`
+   - **2D Nodes:** `VerletRope2D`, `VerletCloth2D`, `VerletSoftBody2D`, `VerletRagdoll2D`, `VerletTerrain2D`, `VerletWindArea2D`
    - **3D Nodes:** `VerletRope3D`, `VerletCloth3D`, `VerletSoftVolume3D`, `VerletWindArea3D`
 
 ### Method 2: Explore the Interactive Showcases
 Open the project directory in Godot 4 and run either showcase:
-- **2D Showcase:** `res://demo/scenes/showcase_world_2d.tscn` (Suspension bridge, wrecking ball, jelly slime, fluttering banner, crate stack, platform ragdoll station, particle grabber & cutter).
+- **2D Showcase:** `res://demo/scenes/showcase_world_2d.tscn` (Suspension bridge, wrecking ball, jelly slime, fluttering banner, crate stack, platform ragdoll station, deformable terrain basin, particle grabber & cutter).
 - **3D Showcase:** `res://demo/scenes/showcase_world.tscn` (Park with grappling hook gun, crane, trampoline, tornado vortex, and wrecking ball).
 - Use the HUD buttons (`[Switch to 2D Showcase]` / `[Switch to 3D Showcase]`) or keys `2` / `3` to jump between them.
 
@@ -110,9 +118,12 @@ Open the project directory in Godot 4 and run either showcase:
 | Input | Action |
 |---|---|
 | Left Click + Drag | Grab and pull any 2D particle (stretch ropes, pull cloth, squish slimes, swing ragdoll limbs) |
+| Click & Drag on Terrain (Y > 500) | Carve persistent soil craters or generate radiating liquid wave ripples |
+| 'M' or Terrain Button | Toggle Terrain Mode (Deformable Earth / Fluid Basin with Buoyancy) |
+| 'X' or Smooth Button | Smooth craters / level water surface back toward baseline |
 | 'Z' or Ragdoll Button | Drop tumbling 2D humanoid ragdoll at cursor |
 | Right Click + Drag | Laser Slice / Cut tool (slices ropes and tears cloth under the cursor) |
-| Space or 'B' | Spawn 2D Wrecking Ball (crashes into crate stacks and tests ropes) |
+| Space or 'B' | Spawn 2D Wrecking Ball (crashes into crate stacks, craters terrain) |
 | 'T' | Toggle Tension Stress Heatmap (Green -> Yellow -> Red) |
 | 'W' | Cycle 2D Wind Mode (Gale -> Hurricane -> Off) |
 | 'R' | Reset 2D Scene |
@@ -195,6 +206,22 @@ ragdoll.shirt_color = Color(0.2, 0.6, 0.9)
 ragdoll.pants_color = Color(0.18, 0.22, 0.32)
 ragdoll.apply_velocity(Vector2(120.0, -40.0)) # Initial toss velocity
 add_child(ragdoll)
+```
+
+### Creating Deformable 2D Terrain & Fluid Basin:
+```gdscript
+var terrain = VerletTerrain2D.new()
+terrain.position = Vector2(0, 520)
+terrain.terrain_width = 1160.0
+terrain.column_count = 80
+terrain.basin_depth = 120.0
+terrain.mode = VerletTerrain2D.TerrainMode.DEFORMABLE_EARTH # or FLUID_BASIN
+add_child(terrain)
+
+# Carve craters or splash waves
+terrain.indent(350.0, 30.0, 40.0) # Dig crater at X=350
+terrain.splash(600.0, 25.0, 50.0) # Radiate wave pulse at X=600
+terrain.smooth_terrain()          # Relax craters toward baseline
 ```
 
 ### Cutting Ropes or Tearing Cloth:

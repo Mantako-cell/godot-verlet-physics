@@ -70,8 +70,46 @@ func _init() -> void:
 	ragdoll2d.apply_impulse(Vector2(0, -100.0))
 	print("SUCCESS: VerletRagdoll2D passed!")
 
-	# 5. Test 2D Scene Execution
-	print("\n[Test 5] Testing 2D Showcase Scene Execution...")
+	# 5. Test VerletTerrain2D
+	print("\n[Test 5] Testing VerletTerrain2D (Deformable Earth & Fluid Basin)...")
+	var terrain = VerletTerrain2D.new()
+	terrain.terrain_width = 800.0
+	terrain.column_count = 60
+	terrain._ready()
+
+	assert(terrain.pos_y.size() == 60, "Terrain column count mismatch")
+	assert(terrain.collision_enabled == true, "Earth mode should have collision enabled")
+
+	# Indent crater
+	terrain.indent(400.0, 30.0, 40.0)
+	assert(terrain.pos_y[30] > 10.0, "Terrain should be indented at midpoint")
+
+	# Raise mound
+	terrain.raise_mound(200.0, 20.0, 35.0)
+	assert(terrain.pos_y[15] < -5.0, "Terrain should be raised into a mound at col 15")
+
+	# Step earth physics
+	for i in range(10):
+		terrain._physics_process(0.016)
+
+	# Test fluid mode & wave splash
+	terrain.mode = VerletTerrain2D.TerrainMode.FLUID_BASIN
+	assert(terrain.collision_enabled == false, "Fluid mode should disable solid surface collision")
+	terrain.splash(200.0, 25.0, 30.0)
+	for i in range(10):
+		terrain._physics_process(0.016)
+
+	# Switch back to earth mode
+	terrain.mode = VerletTerrain2D.TerrainMode.DEFORMABLE_EARTH
+	assert(terrain.collision_enabled == true, "Earth mode should restore solid surface collision")
+
+	terrain.smooth_terrain()
+	terrain.reset_surface()
+	assert(terrain.pos_y[30] == 0.0, "Surface should be flat after reset_surface")
+	print("SUCCESS: VerletTerrain2D passed!")
+
+	# 6. Test 2D Scene Execution
+	print("\n[Test 6] Testing 2D Showcase Scene Execution...")
 	change_scene_to_file("res://demo/scenes/showcase_world_2d.tscn")
 	var timer = create_timer(1.2)
 	timer.timeout.connect(func():

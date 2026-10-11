@@ -9,6 +9,7 @@ static var _snap_stream: AudioStreamWAV = null
 static var _cut_stream: AudioStreamWAV = null
 static var _thud_stream: AudioStreamWAV = null
 static var _grapple_stream: AudioStreamWAV = null
+static var _splash_stream: AudioStreamWAV = null
 
 
 static func play_sound(tree: SceneTree, type: String, volume_db: float = -6.0) -> void:
@@ -28,6 +29,9 @@ static func play_sound(tree: SceneTree, type: String, volume_db: float = -6.0) -
 		"grapple":
 			if not _grapple_stream: _grapple_stream = _build_grapple_sound()
 			stream = _grapple_stream
+		"splash":
+			if not _splash_stream: _splash_stream = _build_splash_sound()
+			stream = _splash_stream
 
 	if stream:
 		var player = AudioStreamPlayer.new()
@@ -104,3 +108,23 @@ static func _build_grapple_sound() -> AudioStreamWAV:
 		data[i] = clampi(int(128.0 + val * 115.0), 0, 255)
 	stream.data = data
 	return stream
+
+
+static func _build_splash_sound() -> AudioStreamWAV:
+	var stream = AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_8_BITS
+	stream.mix_rate = 22050
+	var samples: int = 3800 # ~0.17s
+	var data = PackedByteArray()
+	data.resize(samples)
+	for i in range(samples):
+		var t: float = float(i) / 22050.0
+		var env: float = exp(-t * 24.0)
+		var bubble_freq: float = 340.0 + sin(t * 85.0) * 160.0
+		var noise: float = (randf() * 2.0 - 1.0) * 0.6
+		var bubble: float = sin(t * bubble_freq * TAU) * 0.45
+		var val: float = (noise + bubble) * env
+		data[i] = clampi(int(128.0 + val * 115.0), 0, 255)
+	stream.data = data
+	return stream
+

@@ -7,18 +7,23 @@ extends Node2D
 
 const VerletAudioSynth = preload("verlet_audio_synth.gd")
 const VerletRagdoll2DClass = preload("res://addons/verlet_dynamics_3d/nodes/verlet_ragdoll_2d.gd")
+const VerletTerrain2DClass = preload("res://addons/verlet_dynamics_3d/nodes/verlet_terrain_2d.gd")
 
 @onready var fps_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/FPSLabel
 @onready var particles_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/ParticlesLabel
 @onready var constraints_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/ConstraintsLabel
 @onready var status_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/StatusLabel
 
+@onready var terrain_mode_btn: Button = get_node_or_null("HUD/MarginContainer/VBoxContainer/HBoxButtons/TerrainModeButton")
+@onready var smooth_terrain_btn: Button = get_node_or_null("HUD/MarginContainer/VBoxContainer/HBoxButtons/SmoothTerrainButton")
 @onready var wind_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/WindButton
 @onready var tension_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/TensionButton
 @onready var spawn_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/SpawnButton
 @onready var ragdoll_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/RagdollButton
 @onready var reset_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/ResetButton
 @onready var switch_3d_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/Switch3DButton
+
+@onready var dynamic_terrain: VerletTerrain2D = get_node_or_null("Station_Terrain/DynamicTerrain2D") as VerletTerrain2D
 
 var _grabbed_particle: VerletParticle2D = null
 var wind_active: bool = true
@@ -28,12 +33,23 @@ var _ragdoll_count: int = 0
 
 
 func _ready() -> void:
+	# Ensure HUD buttons do not retain keyboard focus after clicks
+	for btn in [terrain_mode_btn, smooth_terrain_btn, wind_btn, tension_btn, spawn_btn, ragdoll_btn, reset_btn, switch_3d_btn]:
+		if is_instance_valid(btn):
+			btn.focus_mode = Control.FOCUS_NONE
+
+	if is_instance_valid(terrain_mode_btn): terrain_mode_btn.pressed.connect(_toggle_terrain_mode)
+	if is_instance_valid(smooth_terrain_btn): smooth_terrain_btn.pressed.connect(_smooth_terrain)
 	if is_instance_valid(wind_btn): wind_btn.pressed.connect(_toggle_wind)
 	if is_instance_valid(tension_btn): tension_btn.pressed.connect(_toggle_tension_heatmap)
 	if is_instance_valid(spawn_btn): spawn_btn.pressed.connect(_spawn_physics_ball_2d)
 	if is_instance_valid(ragdoll_btn): ragdoll_btn.pressed.connect(_spawn_ragdoll_2d)
 	if is_instance_valid(reset_btn): reset_btn.pressed.connect(_reset_scene)
 	if is_instance_valid(switch_3d_btn): switch_3d_btn.pressed.connect(_switch_to_3d)
+
+	# Register all existing RigidBody2Ds in the scene into physics_bodies_2d
+	for child in find_children("*", "RigidBody2D", true, false):
+		child.add_to_group("physics_bodies_2d")
 
 	_update_wind_state()
 
@@ -59,6 +75,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_spawn_physics_ball_2d()
 			KEY_Z:
 				_spawn_ragdoll_2d()
+			KEY_M:
+				_toggle_terrain_mode()
+			KEY_X:
+				_smooth_terrain()
 			KEY_W:
 				_toggle_wind()
 			KEY_T:
@@ -75,6 +95,25 @@ func _process(_delta: float) -> void:
 		var mouse_pos = get_viewport().get_mouse_position()
 		_grabbed_particle.position = mouse_pos
 		_grabbed_particle.prev_position = mouse_pos
+
+	# Continuous mouse sculpting on terrain when held down
+	if _grabbed_particle == null and is_instance_valid(dynamic_terrain):
+		var mouse_pos = get_viewport().get_mouse_position()
+		if mouse_pos.y > 480.0 and mouse_pos.x >= 0.0 and mouse_pos.x <= 1160.0:
+			if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				if dynamic_terrain.mode == VerletTerrain2DClass.TerrainMode.DEFORMABLE_EARTH:
+					dynamic_terrain.indent(mouse_pos.x, 3.5, 30.0)
+					_set_status("Excavating soil trench at X=%d" % int(mouse_pos.x))
+				elif dynamic_terrain.mode == VerletTerrain2DClass.TerrainMode.FLUID_BASIN:
+					dynamic_terrain.splash(mouse_pos.x, 2.5, 35.0)
+					_set_status("Stirring fluid wake at X=%d" % int(mouse_pos.x))
+			elif Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+				if dynamic_terrain.mode == VerletTerrain2DClass.TerrainMode.DEFORMABLE_EARTH:
+					dynamic_terrain.raise_mound(mouse_pos.x, 3.5, 30.0)
+					_set_status("Building earth mound at X=%d" % int(mouse_pos.x))
+				elif dynamic_terrain.mode == VerletTerrain2DClass.TerrainMode.FLUID_BASIN:
+					dynamic_terrain.splash(mouse_pos.x, -2.5, 35.0)
+					_set_status("Depressing fluid wave at X=%d" % int(mouse_pos.x))
 
 	# Telemetry
 	if is_instance_valid(fps_label):
@@ -95,6 +134,9 @@ func _process(_delta: float) -> void:
 		elif node is VerletRagdoll2DClass:
 			total_p += node.particles.size()
 			total_c += node.constraints.size()
+		elif node is VerletTerrain2DClass:
+			total_p += node.column_count
+			total_c += node.column_count - 1
 
 	if is_instance_valid(particles_label):
 		particles_label.text = "Simulated 2D Particles: %d" % total_p
@@ -127,6 +169,15 @@ func _try_grab_particle_2d(click_pos: Vector2) -> void:
 	if closest_p:
 		_grabbed_particle = closest_p
 		_set_status("Holding 2D Particle (Drag with mouse)")
+	elif click_pos.y > 480.0 and is_instance_valid(dynamic_terrain):
+		if dynamic_terrain.mode == VerletTerrain2DClass.TerrainMode.DEFORMABLE_EARTH:
+			dynamic_terrain.indent(click_pos.x, 26.0, 36.0)
+			_set_status("Indented soil crater at X=%d" % int(click_pos.x))
+			VerletAudioSynth.play_sound(get_tree(), "thud", -6.0)
+		elif dynamic_terrain.mode == VerletTerrain2DClass.TerrainMode.FLUID_BASIN:
+			dynamic_terrain.splash(click_pos.x, 26.0, 45.0)
+			_set_status("Generated wave ripples at X=%d" % int(click_pos.x))
+			VerletAudioSynth.play_sound(get_tree(), "splash", -3.0)
 
 
 
@@ -137,6 +188,17 @@ func _release_grabbed_particle_2d() -> void:
 
 
 func _try_cut_under_cursor_2d(cursor_pos: Vector2) -> void:
+	if cursor_pos.y > 480.0 and is_instance_valid(dynamic_terrain):
+		if dynamic_terrain.mode == VerletTerrain2DClass.TerrainMode.DEFORMABLE_EARTH:
+			dynamic_terrain.raise_mound(cursor_pos.x, 26.0, 36.0)
+			_set_status("Raised earth mound at X=%d" % int(cursor_pos.x))
+			VerletAudioSynth.play_sound(get_tree(), "thud", -5.0)
+			return
+		elif dynamic_terrain.mode == VerletTerrain2DClass.TerrainMode.FLUID_BASIN:
+			dynamic_terrain.splash(cursor_pos.x, -26.0, 45.0)
+			_set_status("Depressed wave trough at X=%d" % int(cursor_pos.x))
+			return
+
 	for node in get_tree().get_nodes_in_group("verlet_physics_2d"):
 		if node is VerletRope2D:
 			for i in range(node.constraints.size()):
@@ -216,6 +278,8 @@ func _spawn_physics_ball_2d() -> void:
 	body.linear_velocity = Vector2(randf_range(-100, 100), 50.0)
 
 	add_child(body)
+	body.add_to_group("physics_bodies_2d")
+	body.add_to_group("physics_balls_2d")
 	VerletAudioSynth.play_sound(get_tree(), "thud", -4.0)
 	_set_status("Dropped 2D Physics Ball #%d!" % _ball_count)
 
@@ -258,6 +322,29 @@ func _switch_to_3d() -> void:
 func _reset_scene() -> void:
 	VerletAudioSynth.play_sound(get_tree(), "cut")
 	get_tree().reload_current_scene()
+
+
+func _toggle_terrain_mode() -> void:
+	if not is_instance_valid(dynamic_terrain):
+		return
+	if dynamic_terrain.mode == VerletTerrain2DClass.TerrainMode.DEFORMABLE_EARTH:
+		dynamic_terrain.mode = VerletTerrain2DClass.TerrainMode.FLUID_BASIN
+		if is_instance_valid(terrain_mode_btn):
+			terrain_mode_btn.text = "Terrain: WATER (M)"
+		_set_status("Switched terrain to FLUID BASIN (Water Waves & Buoyancy)")
+	else:
+		dynamic_terrain.mode = VerletTerrain2DClass.TerrainMode.DEFORMABLE_EARTH
+		if is_instance_valid(terrain_mode_btn):
+			terrain_mode_btn.text = "Terrain: EARTH (M)"
+		_set_status("Switched terrain to DEFORMABLE EARTH (Soil Cratering)")
+	VerletAudioSynth.play_sound(get_tree(), "grapple")
+
+
+func _smooth_terrain() -> void:
+	if is_instance_valid(dynamic_terrain):
+		dynamic_terrain.smooth_terrain()
+		_set_status("Smoothed terrain surface")
+		VerletAudioSynth.play_sound(get_tree(), "cut")
 
 
 func _set_status(txt: String) -> void:
