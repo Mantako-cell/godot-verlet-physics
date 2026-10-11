@@ -76,6 +76,8 @@ var p_r_hip: VerletParticle2D
 var p_r_knee: VerletParticle2D
 var p_r_foot: VerletParticle2D
 
+var _collision_query: PhysicsRayQueryParameters2D = null
+
 
 func _ready() -> void:
 	_rebuild_ragdoll()
@@ -217,6 +219,10 @@ func _physics_process(delta: float) -> void:
 
 
 func _solve_ragdoll_collisions(space_state: PhysicsDirectSpaceState2D) -> void:
+	if _collision_query == null:
+		_collision_query = PhysicsRayQueryParameters2D.new()
+		_collision_query.collision_mask = collision_mask
+
 	for joint_name in joint_map:
 		var p: VerletParticle2D = joint_map[joint_name]
 		if p.is_pinned or not p.active:
@@ -230,8 +236,9 @@ func _solve_ragdoll_collisions(space_state: PhysicsDirectSpaceState2D) -> void:
 		else:
 			cast_target += Vector2.DOWN * p.radius
 
-		var query = PhysicsRayQueryParameters2D.create(p.prev_position, cast_target, collision_mask)
-		var hit = space_state.intersect_ray(query)
+		_collision_query.from = p.prev_position
+		_collision_query.to = cast_target
+		var hit = space_state.intersect_ray(_collision_query)
 
 		if not hit.is_empty():
 			var hit_pos: Vector2 = hit.position
@@ -248,7 +255,8 @@ func _solve_ragdoll_collisions(space_state: PhysicsDirectSpaceState2D) -> void:
 			var new_vel: Vector2 = (tangent_vel * (1.0 - surface_friction)) - (normal_vel * surface_bounce)
 			p.prev_position = p.position - new_vel
 
-			ragdoll_collided.emit(joint_name, hit_pos, hit_norm)
+			if vel.length_squared() > 100.0:
+				ragdoll_collided.emit(joint_name, hit_pos, hit_norm)
 
 
 # =============================================================================
@@ -343,6 +351,12 @@ func apply_impulse(impulse: Vector2) -> void:
 	for p in particles:
 		if not p.is_pinned:
 			p.apply_impulse(impulse)
+
+
+func apply_velocity(vel: Vector2) -> void:
+	for p in particles:
+		if not p.is_pinned:
+			p.prev_position = p.position - vel * (1.0 / 60.0)
 
 
 func apply_impulse_to_joint(joint_name: String, impulse: Vector2) -> void:

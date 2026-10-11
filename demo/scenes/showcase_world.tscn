@@ -119,18 +119,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.5, 0)
 [node name="WreckingBallRope" type="Node3D" parent="Station_WreckingBall" groups=["verlet_physics"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.5, 0)
 script = ExtResource("3_rope")
-length = 4.5
-segment_count = 10
+length = 2.4
+segment_count = 8
 pin_start = true
 pin_end = true
 attach_end_to = NodePath("../HeavyBallBody")
+rigidbody_force_multiplier = 3.0
 rope_radius = 0.045
 solver_iterations = 6
 breakable = true
 break_tension_threshold = 1200.0
 
 [node name="HeavyBallBody" type="RigidBody3D" parent="Station_WreckingBall"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.1, 0)
 mass = 15.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Station_WreckingBall/HeavyBallBody"]
@@ -305,96 +306,167 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MarginContainer"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="Title" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "Verlet Dynamics 3D - Physics Playground"
-
-[node name="PanelStats" type="PanelContainer" parent="HUD/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(340, 0)
+[node name="PanelStats" type="PanelContainer" parent="HUD/MarginContainer"]
+custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+size_flags_vertical = 0
 
-[node name="VBox" type="VBoxContainer" parent="HUD/MarginContainer/VBoxContainer/PanelStats"]
+[node name="VBox" type="VBoxContainer" parent="HUD/MarginContainer/PanelStats"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="FPSLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+[node name="FPSLabel" type="Label" parent="HUD/MarginContainer/PanelStats/VBox"]
 layout_mode = 2
 text = "FPS: 60"
 
-[node name="ParticlesLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+[node name="ParticlesLabel" type="Label" parent="HUD/MarginContainer/PanelStats/VBox"]
 layout_mode = 2
 text = "Simulated Particles: 0"
 
-[node name="ConstraintsLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+[node name="ConstraintsLabel" type="Label" parent="HUD/MarginContainer/PanelStats/VBox"]
 layout_mode = 2
 text = "Active Constraints: 0"
 
-[node name="StatusLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+[node name="StatusLabel" type="Label" parent="HUD/MarginContainer/PanelStats/VBox"]
 layout_mode = 2
 text = "Interaction: Ready"
 
-[node name="HBoxButtons" type="HBoxContainer" parent="HUD/MarginContainer/VBoxContainer"]
+[node name="PauseButton" type="Button" parent="HUD/MarginContainer/PanelStats/VBox"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_font_sizes/font_size = 12
+text = "Menu & Controls [ESC]"
 
-[node name="WindButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(160, 36)
+[node name="PauseMenu" type="Control" parent="HUD"]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Backdrop" type="ColorRect" parent="HUD/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.06, 0.08, 0.12, 0.88)
+
+[node name="CenterContainer" type="CenterContainer" parent="HUD/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="HUD/PauseMenu/CenterContainer"]
+custom_minimum_size = Vector2(680, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="HUD/PauseMenu/CenterContainer/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="HUD/PauseMenu/CenterContainer/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="HeaderBox" type="HBoxContainer" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/HeaderBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Verlet Dynamics 3D - Pause & Menu"
+
+[node name="ResumeButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/HeaderBox"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+text = "Resume (ESC)"
+
+[node name="HSeparator1" type="HSeparator" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="ActionsLabel" type="Label" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.78, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "PLAYGROUND ACTIONS"
+
+[node name="GridButtons" type="GridContainer" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="WindButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
 text = "Wind: GALE (6 m/s)"
 
-[node name="TensionButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(170, 36)
+[node name="TensionButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
 text = "Tension Heatmap: OFF"
 
-[node name="GrappleButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(160, 36)
+[node name="GrappleButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
 text = "Fire Grapple (G)"
 
-[node name="SpawnButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(150, 36)
+[node name="SpawnButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
 text = "Drop Ball (B/Space)"
 
-[node name="ResetButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(120, 36)
-layout_mode = 2
-text = "Reset Scene (R)"
-
-[node name="QualityButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(170, 36)
+[node name="QualityButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
 text = "Profile: iGPU / Fast (P)"
 
-[node name="Switch2DButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(180, 36)
+[node name="ResetButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
-text = "Switch to 2D Playground ➜"
+text = "Reset Scene (R)"
 
-[node name="Spacer" type="Control" parent="HUD/MarginContainer/VBoxContainer"]
+[node name="Switch2DButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-size_flags_vertical = 3
+text = "Switch to 2D Playground (2)"
 
-[node name="Instructions" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
+[node name="HSeparator2" type="HSeparator" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="ControlsLabel" type="Label" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.78, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "CONTROLS REFERENCE"
+
+[node name="Instructions" type="Label" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.9, 0.95, 0.85)
-text = "Interactive Features:
-• Right-Mouse Drag: Orbit / Fly Camera
+theme_override_font_sizes/font_size = 13
+text = "• Right-Mouse Drag: Orbit / Fly Camera
 • Left-Mouse Click & Drag: Grab & stretch any rope/cloth particle in 3D
-• 'G' / Grapple Button: Shoot physics grappling hook rope! (Scroll Wheel Up/Down to winch in/out!)
+• 'G' / Grapple Button: Shoot physics grappling hook rope (Mouse Wheel to winch)
 • 'C' or Middle-Mouse: Laser slice ropes or tear cloth with spark burst FX
-• 'T': Toggle real-time Tension Heatmap (Green -> Yellow -> Red stress gradient)
-• 'W': Cycle Wind: Gale -> Whirlwind Tornado -> Off
-• 'B' or Space: Fire rolling physics sphere | 'R': Reset playground"
+• 'T': Toggle real-time Tension Heatmap | 'W': Cycle Wind (Gale / Vortex / Off)
+• 'B' or Space: Fire rolling physics sphere | 'P': Toggle quality profile
+• 'R': Reset scene | '2': Switch to 2D playground | 'ESC': Pause / Resume"

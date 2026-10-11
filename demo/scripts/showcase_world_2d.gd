@@ -8,17 +8,20 @@ extends Node2D
 const VerletAudioSynth = preload("verlet_audio_synth.gd")
 const VerletRagdoll2DClass = preload("res://addons/verlet_dynamics_3d/nodes/verlet_ragdoll_2d.gd")
 
-@onready var fps_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/FPSLabel
-@onready var particles_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/ParticlesLabel
-@onready var constraints_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/ConstraintsLabel
-@onready var status_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/StatusLabel
+@onready var fps_label: Label = $HUD/MarginContainer/PanelStats/VBox/FPSLabel
+@onready var particles_label: Label = $HUD/MarginContainer/PanelStats/VBox/ParticlesLabel
+@onready var constraints_label: Label = $HUD/MarginContainer/PanelStats/VBox/ConstraintsLabel
+@onready var status_label: Label = $HUD/MarginContainer/PanelStats/VBox/StatusLabel
+@onready var pause_btn: Button = get_node_or_null("HUD/MarginContainer/PanelStats/VBox/PauseButton")
 
-@onready var wind_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/WindButton
-@onready var tension_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/TensionButton
-@onready var spawn_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/SpawnButton
-@onready var ragdoll_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/RagdollButton
-@onready var reset_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/ResetButton
-@onready var switch_3d_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/Switch3DButton
+@onready var pause_menu: Control = get_node_or_null("HUD/PauseMenu")
+@onready var resume_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/HeaderBox/ResumeButton")
+@onready var wind_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/WindButton")
+@onready var tension_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/TensionButton")
+@onready var spawn_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/SpawnButton")
+@onready var ragdoll_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/RagdollButton")
+@onready var reset_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/ResetButton")
+@onready var switch_3d_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/Switch3DButton")
 
 var _grabbed_particle: VerletParticle2D = null
 var wind_active: bool = true
@@ -29,26 +32,50 @@ var _telemetry_timer: float = 0.0
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 	# Ensure HUD buttons do not retain keyboard focus after clicks
-	for btn in [wind_btn, tension_btn, spawn_btn, ragdoll_btn, reset_btn, switch_3d_btn]:
+	for btn in [wind_btn, tension_btn, spawn_btn, ragdoll_btn, reset_btn, switch_3d_btn, resume_btn, pause_btn]:
 		if is_instance_valid(btn):
 			btn.focus_mode = Control.FOCUS_NONE
 
+	if is_instance_valid(pause_btn): pause_btn.pressed.connect(_toggle_pause)
+	if is_instance_valid(resume_btn): resume_btn.pressed.connect(_toggle_pause)
 	if is_instance_valid(wind_btn): wind_btn.pressed.connect(_toggle_wind)
 	if is_instance_valid(tension_btn): tension_btn.pressed.connect(_toggle_tension_heatmap)
 	if is_instance_valid(spawn_btn): spawn_btn.pressed.connect(_spawn_physics_ball_2d)
 	if is_instance_valid(ragdoll_btn): ragdoll_btn.pressed.connect(_spawn_ragdoll_2d)
 	if is_instance_valid(reset_btn): reset_btn.pressed.connect(_reset_scene)
 	if is_instance_valid(switch_3d_btn): switch_3d_btn.pressed.connect(_switch_to_3d)
-
-	# Register all existing RigidBody2Ds in the scene into physics_bodies_2d
-	for child in find_children("*", "RigidBody2D", true, false):
-		child.add_to_group("physics_bodies_2d")
-
 	_update_wind_state()
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		match event.keycode:
+			KEY_ESCAPE:
+				_toggle_pause()
+			KEY_R:
+				_reset_scene()
+			KEY_B, KEY_SPACE:
+				if not get_tree().paused:
+					_spawn_physics_ball_2d()
+			KEY_Z:
+				if not get_tree().paused:
+					_spawn_ragdoll_2d()
+			KEY_W:
+				_toggle_wind()
+			KEY_T:
+				_toggle_tension_heatmap()
+			KEY_C:
+				if not get_tree().paused:
+					_try_cut_under_cursor_2d(get_viewport().get_mouse_position())
+			KEY_3:
+				_switch_to_3d()
+
+	if get_tree().paused:
+		return
+
 	# Left Click: Grab Particle
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -58,24 +85,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_release_grabbed_particle_2d()
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 			_try_cut_under_cursor_2d(event.position)
-
-	# Keyboard
-	if event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
-			KEY_R:
-				_reset_scene()
-			KEY_B, KEY_SPACE:
-				_spawn_physics_ball_2d()
-			KEY_Z:
-				_spawn_ragdoll_2d()
-			KEY_W:
-				_toggle_wind()
-			KEY_T:
-				_toggle_tension_heatmap()
-			KEY_C:
-				_try_cut_under_cursor_2d(get_viewport().get_mouse_position())
-			KEY_3:
-				_switch_to_3d()
 
 
 func _process(delta: float) -> void:
@@ -228,7 +237,6 @@ func _spawn_physics_ball_2d() -> void:
 	body.linear_velocity = Vector2(randf_range(-100, 100), 50.0)
 
 	add_child(body)
-	body.add_to_group("physics_bodies_2d")
 	body.add_to_group("physics_balls_2d")
 	VerletAudioSynth.play_sound(get_tree(), "thud", -4.0)
 	_set_status("Dropped 2D Physics Ball #%d!" % _ball_count)
@@ -265,11 +273,25 @@ func _spawn_ragdoll_2d() -> void:
 	_set_status("Dropped 2D Ragdoll #%d at (%d, %d)!" % [_ragdoll_count, int(mouse_pos.x), int(mouse_pos.y)])
 
 
+func _toggle_pause() -> void:
+	var next_state: bool = not get_tree().paused
+	get_tree().paused = next_state
+	if is_instance_valid(pause_menu):
+		pause_menu.visible = next_state
+	if next_state:
+		_release_grabbed_particle_2d()
+		_set_status("Paused (Press ESC or Resume to continue)")
+	else:
+		_set_status("Resumed")
+
+
 func _switch_to_3d() -> void:
+	get_tree().paused = false
 	get_tree().change_scene_to_file("res://demo/scenes/showcase_world.tscn")
 
 
 func _reset_scene() -> void:
+	get_tree().paused = false
 	VerletAudioSynth.play_sound(get_tree(), "cut")
 	get_tree().reload_current_scene()
 

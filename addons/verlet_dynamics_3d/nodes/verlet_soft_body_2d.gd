@@ -57,6 +57,7 @@ signal body_impact(point: Vector2, normal: Vector2, force: float)
 var particles: Array[VerletParticle2D] = []
 var constraints: Array[VerletConstraint2D] = []
 var center_particle: VerletParticle2D = null
+var _collision_query: PhysicsRayQueryParameters2D = null
 
 
 func _ready() -> void:
@@ -144,14 +145,19 @@ func _physics_process(delta: float) -> void:
 
 
 func _solve_collisions_2d(space_state: PhysicsDirectSpaceState2D) -> void:
+	if _collision_query == null:
+		_collision_query = PhysicsRayQueryParameters2D.new()
+		_collision_query.collision_mask = collision_mask
+
 	# Check perimeter particles
 	for i in range(1, particles.size()):
 		var p = particles[i]
 		var move_delta: Vector2 = p.position - p.prev_position
 		var cast_target: Vector2 = p.position + (move_delta.normalized() * particle_radius)
 
-		var query = PhysicsRayQueryParameters2D.create(p.prev_position, cast_target, collision_mask)
-		var hit = space_state.intersect_ray(query)
+		_collision_query.from = p.prev_position
+		_collision_query.to = cast_target
+		var hit = space_state.intersect_ray(_collision_query)
 		if not hit.is_empty():
 			var hit_pos: Vector2 = hit.position
 			var hit_norm: Vector2 = hit.normal
@@ -163,7 +169,8 @@ func _solve_collisions_2d(space_state: PhysicsDirectSpaceState2D) -> void:
 			var tang_vel: Vector2 = vel - norm_vel
 
 			p.prev_position = p.position - (tang_vel * (1.0 - surface_friction) - norm_vel * bounce_factor)
-			body_impact.emit(hit_pos, hit_norm, vel.length())
+			if vel.length_squared() > 100.0:
+				body_impact.emit(hit_pos, hit_norm, vel.length())
 
 
 func _draw() -> void:

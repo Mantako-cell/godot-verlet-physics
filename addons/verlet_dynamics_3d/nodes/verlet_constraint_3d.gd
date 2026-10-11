@@ -43,13 +43,14 @@ func solve() -> bool:
 
 	var diff: float = current_distance - rest_length
 
+	# Compute elongation and tension (scaled for realistic 3D cable dynamics)
+	current_elongation = diff
+	current_tension = absf(diff) * stiffness * 1000.0
+
 	# Check snapping only if breakable
-	if can_break:
-		current_elongation = diff
-		current_tension = absf(diff) * stiffness * 100.0
-		if current_tension > break_tension_limit:
-			is_active = false
-			return true # Snapped
+	if can_break and current_tension > break_tension_limit:
+		is_active = false
+		return true # Snapped
 
 	var total_inv_mass: float = p1.inv_mass + p2.inv_mass
 	if total_inv_mass <= 0.000001:

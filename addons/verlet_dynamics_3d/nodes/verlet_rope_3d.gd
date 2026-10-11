@@ -425,7 +425,9 @@ func _apply_rigidbody_coupling() -> void:
 		var p1 = particles[1]
 		var tension_dir: Vector3 = (p1.position - p0.position).normalized()
 		var tension_force: Vector3 = tension_dir * constraints[0].current_tension * rigidbody_force_multiplier
-		_start_rigidbody.apply_force(tension_force, p0.position - _start_rigidbody.global_position)
+		var rel_vel: Vector3 = _start_rigidbody.linear_velocity
+		var damp_force: Vector3 = tension_dir * (rel_vel.dot(tension_dir) * 10.0)
+		_start_rigidbody.apply_force(tension_force - damp_force, p0.position - _start_rigidbody.global_position)
 
 	# Tension acting on end rigidbody
 	var last_idx: int = particles.size() - 1
@@ -434,7 +436,9 @@ func _apply_rigidbody_coupling() -> void:
 		var p_prev = particles[last_idx - 1]
 		var tension_dir: Vector3 = (p_prev.position - p_end.position).normalized()
 		var tension_force: Vector3 = tension_dir * constraints[constraints.size() - 1].current_tension * rigidbody_force_multiplier
-		_end_rigidbody.apply_force(tension_force, p_end.position - _end_rigidbody.global_position)
+		var rel_vel: Vector3 = _end_rigidbody.linear_velocity
+		var damp_force: Vector3 = tension_dir * (rel_vel.dot(tension_dir) * 10.0)
+		_end_rigidbody.apply_force(tension_force - damp_force, p_end.position - _end_rigidbody.global_position)
 
 
 func _update_visuals() -> void:

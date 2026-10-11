@@ -139,6 +139,7 @@ var _start_rigidbody: RigidBody2D = null
 var _end_rigidbody: RigidBody2D = null
 
 var _time_acc: float = 0.0
+var _collision_query: PhysicsRayQueryParameters2D = null
 
 
 func _ready() -> void:
@@ -287,6 +288,17 @@ func _physics_process(delta: float) -> void:
 
 
 func _solve_collisions_2d(space_state: PhysicsDirectSpaceState2D) -> void:
+	if _collision_query == null:
+		_collision_query = PhysicsRayQueryParameters2D.new()
+		_collision_query.collision_mask = collision_mask
+
+	var excludes: Array[RID] = []
+	if is_instance_valid(_start_rigidbody):
+		excludes.append(_start_rigidbody.get_rid())
+	if is_instance_valid(_end_rigidbody):
+		excludes.append(_end_rigidbody.get_rid())
+	_collision_query.exclude = excludes
+
 	for idx in range(particles.size()):
 		var p = particles[idx]
 		if p.is_pinned or not p.active:
@@ -300,14 +312,9 @@ func _solve_collisions_2d(space_state: PhysicsDirectSpaceState2D) -> void:
 		else:
 			cast_target += Vector2.DOWN * collision_radius
 
-		var excludes: Array[RID] = []
-		if is_instance_valid(_start_rigidbody):
-			excludes.append(_start_rigidbody.get_rid())
-		if is_instance_valid(_end_rigidbody):
-			excludes.append(_end_rigidbody.get_rid())
-
-		var query = PhysicsRayQueryParameters2D.create(p.prev_position, cast_target, collision_mask, excludes)
-		var hit = space_state.intersect_ray(query)
+		_collision_query.from = p.prev_position
+		_collision_query.to = cast_target
+		var hit = space_state.intersect_ray(_collision_query)
 
 		if not hit.is_empty():
 			var hit_pos: Vector2 = hit.position
@@ -322,7 +329,8 @@ func _solve_collisions_2d(space_state: PhysicsDirectSpaceState2D) -> void:
 			var new_vel: Vector2 = (tangent_vel * (1.0 - surface_friction)) - (normal_vel * surface_bounce)
 			p.prev_position = p.position - new_vel
 
-			particle_collided.emit(idx, hit_pos, hit_norm)
+			if vel.length_squared() > 100.0:
+				particle_collided.emit(idx, hit_pos, hit_norm)
 
 
 func _apply_rigidbody_coupling_2d() -> void:
@@ -334,7 +342,9 @@ func _apply_rigidbody_coupling_2d() -> void:
 		var p1 = particles[1]
 		var tension_dir: Vector2 = (p1.position - p0.position).normalized()
 		var tension_force: Vector2 = tension_dir * constraints[0].current_tension * rigidbody_force_multiplier
-		_start_rigidbody.apply_force(tension_force, p0.position - _start_rigidbody.global_position)
+		var rel_vel: Vector2 = _start_rigidbody.linear_velocity
+		var damp_force: Vector2 = tension_dir * (rel_vel.dot(tension_dir) * 20.0)
+		_start_rigidbody.apply_force(tension_force - damp_force, p0.position - _start_rigidbody.global_position)
 
 	var last_idx: int = particles.size() - 1
 	if is_instance_valid(_end_rigidbody) and pin_end:
@@ -342,7 +352,9 @@ func _apply_rigidbody_coupling_2d() -> void:
 		var p_prev = particles[last_idx - 1]
 		var tension_dir: Vector2 = (p_prev.position - p_end.position).normalized()
 		var tension_force: Vector2 = tension_dir * constraints[constraints.size() - 1].current_tension * rigidbody_force_multiplier
-		_end_rigidbody.apply_force(tension_force, p_end.position - _end_rigidbody.global_position)
+		var rel_vel: Vector2 = _end_rigidbody.linear_velocity
+		var damp_force: Vector2 = tension_dir * (rel_vel.dot(tension_dir) * 20.0)
+		_end_rigidbody.apply_force(tension_force - damp_force, p_end.position - _end_rigidbody.global_position)
 
 
 func _draw() -> void:
@@ -361,23 +373,37 @@ func _draw() -> void:
 
 
 func _draw_smooth_line(inv_xform: Transform2D) -> void:
-	for i in range(constraints.size()):
-		var c = constraints[i]
-		if not c.is_active:
-			continue
+	if not visualize_tension:
+		var pts = PackedVector2Array()
+		for i in range(constraints.size()):
+			var c = constraints[i]
+			if not c.is_active:
+				if pts.size() >= 2:
+					draw_polyline(pts, rope_color, rope_width, true)
+				pts.clear()
+				continue
+			if pts.is_empty():
+				pts.append(inv_xform * c.p1.position)
+			pts.append(inv_xform * c.p2.position)
+		if pts.size() >= 2:
+			draw_polyline(pts, rope_color, rope_width, true)
+	else:
+		for i in range(constraints.size()):
+			var c = constraints[i]
+			if not c.is_active:
+				continue
 
-		var p1 = inv_xform * c.p1.position
-		var p2 = inv_xform * c.p2.position
+			var p1 = inv_xform * c.p1.position
+			var p2 = inv_xform * c.p2.position
 
-		var col = rope_color
-		if visualize_tension:
+			var col = rope_color
 			var t_ratio = clampf(c.current_tension / maxf(break_tension_threshold, 1.0), 0.0, 1.0)
 			if t_ratio > 0.5:
 				col = Color(1.0, 0.85, 0.1).lerp(Color(1.0, 0.15, 0.1), (t_ratio - 0.5) * 2.0)
 			else:
 				col = Color(0.15, 0.9, 0.45).lerp(Color(1.0, 0.85, 0.1), t_ratio * 2.0)
 
-		draw_line(p1, p2, col, rope_width, true)
+			draw_line(p1, p2, col, rope_width, true)
 
 
 func _draw_chain_links(inv_xform: Transform2D) -> void:

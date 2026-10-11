@@ -19,6 +19,10 @@ config/icon="res://addons/verlet_dynamics_3d/icons/icon_rope.svg"
 
 enabled=PackedStringArray("res://addons/verlet_dynamics_3d/plugin.cfg")
 
+[display]
+
+window/vsync/vsync_mode=0
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

@@ -56,16 +56,16 @@ position = Vector2(340, 100)
 
 [node name="Rope" type="Node2D" parent="Station_WreckingBall" groups=["verlet_physics_2d"]]
 script = ExtResource("2_rope")
-length = 260.0
-segment_count = 14
+length = 180.0
+segment_count = 10
 pin_start = true
 pin_end = true
 attach_end_to = NodePath("../HeavyBall")
 rope_width = 6.0
 rope_color = Color(0.35, 0.38, 0.45, 1)
 
-[node name="HeavyBall" type="RigidBody2D" parent="Station_WreckingBall" groups=["physics_bodies_2d"]]
-position = Vector2(0, 260)
+[node name="HeavyBall" type="RigidBody2D" parent="Station_WreckingBall"]
+position = Vector2(0, 180)
 mass = 12.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Station_WreckingBall/HeavyBall"]
@@ -78,7 +78,7 @@ polygon = PackedVector2Array(32, 0, 29, 12, 22, 22, 12, 29, 0, 32, -12, 29, -22,
 [node name="Crates" type="Node2D" parent="Station_WreckingBall"]
 position = Vector2(90, 480)
 
-[node name="Crate1" type="RigidBody2D" parent="Station_WreckingBall/Crates" groups=["physics_bodies_2d"]]
+[node name="Crate1" type="RigidBody2D" parent="Station_WreckingBall/Crates"]
 position = Vector2(-20, 10)
 mass = 1.0
 
@@ -92,7 +92,7 @@ offset_right = 19.0
 offset_bottom = 19.0
 color = Color(0.72, 0.52, 0.32, 1)
 
-[node name="Crate2" type="RigidBody2D" parent="Station_WreckingBall/Crates" groups=["physics_bodies_2d"]]
+[node name="Crate2" type="RigidBody2D" parent="Station_WreckingBall/Crates"]
 position = Vector2(22, 10)
 mass = 1.0
 
@@ -106,7 +106,7 @@ offset_right = 19.0
 offset_bottom = 19.0
 color = Color(0.72, 0.52, 0.32, 1)
 
-[node name="Crate3" type="RigidBody2D" parent="Station_WreckingBall/Crates" groups=["physics_bodies_2d"]]
+[node name="Crate3" type="RigidBody2D" parent="Station_WreckingBall/Crates"]
 position = Vector2(0, -30)
 mass = 1.0
 
@@ -226,91 +226,163 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MarginContainer"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="Title" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 22
-text = "Verlet Dynamics 2D - Physics Playground"
-
-[node name="PanelStats" type="PanelContainer" parent="HUD/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(340, 0)
+[node name="PanelStats" type="PanelContainer" parent="HUD/MarginContainer"]
+custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 size_flags_horizontal = 0
+size_flags_vertical = 0
 
-[node name="VBox" type="VBoxContainer" parent="HUD/MarginContainer/VBoxContainer/PanelStats"]
+[node name="VBox" type="VBoxContainer" parent="HUD/MarginContainer/PanelStats"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="FPSLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+[node name="FPSLabel" type="Label" parent="HUD/MarginContainer/PanelStats/VBox"]
 layout_mode = 2
 text = "FPS: 60"
 
-[node name="ParticlesLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+[node name="ParticlesLabel" type="Label" parent="HUD/MarginContainer/PanelStats/VBox"]
 layout_mode = 2
 text = "Simulated 2D Particles: 0"
 
-[node name="ConstraintsLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+[node name="ConstraintsLabel" type="Label" parent="HUD/MarginContainer/PanelStats/VBox"]
 layout_mode = 2
 text = "Active 2D Constraints: 0"
 
-[node name="StatusLabel" type="Label" parent="HUD/MarginContainer/VBoxContainer/PanelStats/VBox"]
+[node name="StatusLabel" type="Label" parent="HUD/MarginContainer/PanelStats/VBox"]
 layout_mode = 2
 text = "Interaction: Ready"
 
-[node name="HBoxButtons" type="HBoxContainer" parent="HUD/MarginContainer/VBoxContainer"]
+[node name="PauseButton" type="Button" parent="HUD/MarginContainer/PanelStats/VBox"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_font_sizes/font_size = 12
+text = "Menu & Controls [ESC]"
 
-[node name="WindButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(160, 36)
+[node name="PauseMenu" type="Control" parent="HUD"]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Backdrop" type="ColorRect" parent="HUD/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.06, 0.08, 0.12, 0.88)
+
+[node name="CenterContainer" type="CenterContainer" parent="HUD/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="HUD/PauseMenu/CenterContainer"]
+custom_minimum_size = Vector2(680, 0)
 layout_mode = 2
-text = "Wind: ON [450 px/s]"
 
-[node name="TensionButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(160, 36)
+[node name="Margin" type="MarginContainer" parent="HUD/PauseMenu/CenterContainer/Panel"]
 layout_mode = 2
-text = "Tension: OFF"
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
 
-[node name="SpawnButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(170, 36)
+[node name="VBox" type="VBoxContainer" parent="HUD/PauseMenu/CenterContainer/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="HeaderBox" type="HBoxContainer" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/HeaderBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Verlet Dynamics 2D - Pause & Menu"
+
+[node name="ResumeButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/HeaderBox"]
+custom_minimum_size = Vector2(140, 36)
+layout_mode = 2
+text = "Resume (ESC)"
+
+[node name="HSeparator1" type="HSeparator" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="ActionsLabel" type="Label" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.78, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "PLAYGROUND ACTIONS"
+
+[node name="GridButtons" type="GridContainer" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="WindButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
+layout_mode = 2
+text = "Wind: ON (450 px/s)"
+
+[node name="TensionButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
+layout_mode = 2
+text = "Tension Heatmap: OFF"
+
+[node name="SpawnButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
 text = "Drop 2D Ball (B/Space)"
 
-[node name="RagdollButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(170, 36)
+[node name="RagdollButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
 text = "Drop Ragdoll (Z)"
 
-[node name="ResetButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(120, 36)
+[node name="ResetButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
-text = "Reset (R)"
+text = "Reset Scene (R)"
 
-[node name="Switch3DButton" type="Button" parent="HUD/MarginContainer/VBoxContainer/HBoxButtons"]
-custom_minimum_size = Vector2(180, 36)
+[node name="Switch3DButton" type="Button" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons"]
+custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
-text = "Switch to 3D Playground ➜"
+text = "Switch to 3D (3)"
 
-[node name="Spacer" type="Control" parent="HUD/MarginContainer/VBoxContainer"]
+[node name="HSeparator2" type="HSeparator" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
 layout_mode = 2
-size_flags_vertical = 3
 
-[node name="Instructions" type="Label" parent="HUD/MarginContainer/VBoxContainer"]
+[node name="ControlsLabel" type="Label" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.25, 0.35, 1)
-text = "2D Physics Controls:
-• Left-Mouse Click & Drag: Grab and pull any ragdoll limb, rope, slime, or banner
+theme_override_colors/font_color = Color(0.65, 0.78, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "CONTROLS REFERENCE"
+
+[node name="Instructions" type="Label" parent="HUD/PauseMenu/CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 0.95, 0.85)
+theme_override_font_sizes/font_size = 13
+text = "• Left-Mouse Click & Drag: Grab and pull any ragdoll limb, rope, slime, or banner
 • Right-Mouse Click or 'C': Cut rope segment or tear banner under cursor
 • Space or 'B': Drop rolling ball | 'Z': Drop 2D ragdoll
 • 'W': Toggle wind blower | 'T': Toggle Tension stress heatmap
-• 'R': Reset scene | Click 'Switch to 3D Playground' to return to 3D mode"
+• 'R': Reset scene | '3': Switch to 3D playground | 'ESC': Pause / Resume"
+
 
 

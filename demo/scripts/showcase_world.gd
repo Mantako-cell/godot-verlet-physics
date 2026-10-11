@@ -8,17 +8,21 @@ extends Node3D
 const VerletAudioSynth = preload("verlet_audio_synth.gd")
 
 @onready var camera: Camera3D = $FreeFlyCamera
-@onready var fps_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/FPSLabel
-@onready var particles_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/ParticlesLabel
-@onready var constraints_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/ConstraintsLabel
-@onready var status_label: Label = $HUD/MarginContainer/VBoxContainer/PanelStats/VBox/StatusLabel
-@onready var wind_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/WindButton
-@onready var tension_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/TensionButton
-@onready var grapple_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/GrappleButton
-@onready var spawn_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/SpawnButton
-@onready var reset_btn: Button = $HUD/MarginContainer/VBoxContainer/HBoxButtons/ResetButton
-@onready var quality_btn: Button = get_node_or_null("HUD/MarginContainer/VBoxContainer/HBoxButtons/QualityButton")
-@onready var switch_2d_btn: Button = get_node_or_null("HUD/MarginContainer/VBoxContainer/HBoxButtons/Switch2DButton")
+@onready var fps_label: Label = $HUD/MarginContainer/PanelStats/VBox/FPSLabel
+@onready var particles_label: Label = $HUD/MarginContainer/PanelStats/VBox/ParticlesLabel
+@onready var constraints_label: Label = $HUD/MarginContainer/PanelStats/VBox/ConstraintsLabel
+@onready var status_label: Label = $HUD/MarginContainer/PanelStats/VBox/StatusLabel
+@onready var pause_btn: Button = get_node_or_null("HUD/MarginContainer/PanelStats/VBox/PauseButton")
+
+@onready var pause_menu: Control = get_node_or_null("HUD/PauseMenu")
+@onready var resume_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/HeaderBox/ResumeButton")
+@onready var wind_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/WindButton")
+@onready var tension_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/TensionButton")
+@onready var grapple_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/GrappleButton")
+@onready var spawn_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/SpawnButton")
+@onready var reset_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/ResetButton")
+@onready var quality_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/GridButtons/QualityButton")
+@onready var switch_2d_btn: Button = get_node_or_null("HUD/PauseMenu/CenterContainer/Panel/Margin/VBox/Switch2DButton")
 @onready var world_env: WorldEnvironment = $WorldEnvironment
 @onready var sun_light: DirectionalLight3D = $DirectionalLight3D
 
@@ -32,14 +36,21 @@ var current_wind_mode: WindMode = WindMode.DIRECTIONAL
 var tension_heatmap_active: bool = false
 var igpu_mode: bool = true
 var _ball_count: int = 0
+var _telemetry_timer: float = 0.0
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 	# Ensure HUD buttons do not retain keyboard focus after clicks
-	for btn in [wind_btn, tension_btn, grapple_btn, spawn_btn, reset_btn, quality_btn, switch_2d_btn]:
+	for btn in [wind_btn, tension_btn, grapple_btn, spawn_btn, reset_btn, quality_btn, switch_2d_btn, resume_btn, pause_btn]:
 		if is_instance_valid(btn):
 			btn.focus_mode = Control.FOCUS_NONE
 
+	if is_instance_valid(pause_btn):
+		pause_btn.pressed.connect(_toggle_pause)
+	if is_instance_valid(resume_btn):
+		resume_btn.pressed.connect(_toggle_pause)
 	if is_instance_valid(wind_btn):
 		wind_btn.pressed.connect(_cycle_wind_mode)
 	if is_instance_valid(tension_btn):
@@ -65,10 +76,13 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
+			KEY_ESCAPE:
+				_toggle_pause()
 			KEY_R:
 				_reset_scene()
 			KEY_B, KEY_SPACE:
-				_spawn_physics_ball()
+				if not get_tree().paused:
+					_spawn_physics_ball()
 			KEY_W:
 				_cycle_wind_mode()
 			KEY_T:
@@ -79,7 +93,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				_switch_to_2d()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_telemetry_timer += delta
+	if _telemetry_timer < 0.25:
+		return
+	_telemetry_timer = 0.0
+
 	# Update HUD telemetry
 	if is_instance_valid(fps_label):
 		fps_label.text = "FPS: %d (%0.2f ms)" % [Engine.get_frames_per_second(), 1000.0 / max(1.0, float(Engine.get_frames_per_second()))]
@@ -207,7 +226,19 @@ func _spawn_physics_ball() -> void:
 	_on_hint_updated("Launched Physics Ball #%d!" % _ball_count)
 
 
+func _toggle_pause() -> void:
+	var next_state: bool = not get_tree().paused
+	get_tree().paused = next_state
+	if is_instance_valid(pause_menu):
+		pause_menu.visible = next_state
+	if next_state:
+		_on_hint_updated("Paused (Press ESC or Resume to continue)")
+	else:
+		_on_hint_updated("Resumed")
+
+
 func _reset_scene() -> void:
+	get_tree().paused = false
 	VerletAudioSynth.play_sound(get_tree(), "cut")
 	get_tree().reload_current_scene()
 
@@ -218,6 +249,7 @@ func _on_hint_updated(text: String) -> void:
 
 
 func _switch_to_2d() -> void:
+	get_tree().paused = false
 	get_tree().change_scene_to_file("res://demo/scenes/showcase_world_2d.tscn")
 
 

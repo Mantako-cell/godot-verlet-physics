@@ -222,27 +222,47 @@ func _draw() -> void:
 	var w = resolution.x
 	var h = resolution.y
 
-	# Draw quad grid meshes
-	for x in range(w - 1):
-		for y in range(h - 1):
-			var p00 = inv_xform * particles[x][y].position
-			var p10 = inv_xform * particles[x + 1][y].position
-			var p11 = inv_xform * particles[x + 1][y + 1].position
-			var p01 = inv_xform * particles[x][y + 1].position
+	# 1. Batch cloth quad triangles in a single GPU call
+	var pts: PackedVector2Array = PackedVector2Array()
+	for y in range(h):
+		for x in range(w):
+			pts.append(inv_xform * particles[x][y].position)
 
-			var quad_pts = PackedVector2Array([p00, p10, p11, p01])
-			draw_colored_polygon(quad_pts, cloth_color)
+	var indices: PackedInt32Array = PackedInt32Array()
+	for y in range(h - 1):
+		for x in range(w - 1):
+			if not particles[x][y].active or not particles[x + 1][y].active or not particles[x + 1][y + 1].active or not particles[x][y + 1].active:
+				continue
+			var i00 = y * w + x
+			var i10 = y * w + (x + 1)
+			var i11 = (y + 1) * w + (x + 1)
+			var i01 = (y + 1) * w + x
+			indices.append(i00)
+			indices.append(i10)
+			indices.append(i11)
+			indices.append(i00)
+			indices.append(i11)
+			indices.append(i01)
 
-	# Draw grid lines for banner weave look
+	if indices.size() > 0:
+		var colors = PackedColorArray([cloth_color])
+		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), indices, pts, colors)
+
+	# 2. Batch grid weave lines in a single GPU draw call
+	var line_pts: PackedVector2Array = PackedVector2Array()
 	for c in structural_constraints:
 		if c.is_active:
-			draw_line(inv_xform * c.p1.position, inv_xform * c.p2.position, outline_color, 1.2)
+			line_pts.append(inv_xform * c.p1.position)
+			line_pts.append(inv_xform * c.p2.position)
+	if line_pts.size() >= 2:
+		draw_multiline(line_pts, outline_color, 1.2)
 
 
 func tear_at(coord_x: int, coord_y: int) -> void:
 	if coord_x < 0 or coord_x >= resolution.x or coord_y < 0 or coord_y >= resolution.y:
 		return
 	var target_p = particles[coord_x][coord_y]
+	target_p.active = false
 	for c in structural_constraints:
 		if c.p1 == target_p or c.p2 == target_p:
 			c.is_active = false
